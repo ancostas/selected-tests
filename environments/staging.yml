@@ -6,5 +6,5 @@ prometheusRules:
       severity: warning
       email_to: jeff.zambory@mongodb.com
     annotations:
-      description: Test alert firing
-      summary: Test alert firing
+      description: "High number of bad responses coming from selected-tests service"
+      summary: "Selected test service giving high number of bad responses over the last hour (current number: {{ $value }}). More information can be seen here: https://grafana.corp.mongodb.com/d/zenZa6oWk/selected-tests-service?orgId=4"

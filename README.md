@@ -14,47 +14,96 @@ pip install -e .
 - Evergreen credentials
   - You can find your credentials in your User Settings in the Evergreen UI. The cli looks for them
   in the usual default location, i.e. '~/.evergreen.yml'
+- Location of a mongodb instance
+  - The location of the instance should be in an environment variable called
+  ```SELECTED_TESTS_MONGO_URI```
 ```
 python src/selectedtests/app/app.py
 ```
 
-# Create task mappings
+## Create task mappings
 The task mapping cli command has only one required argument - the name of an evergreen project.
-In order to run it, run the below. 
+In order to run it, run the below.
 ```
-pip install -e .
-mappings task EVERGREEN_PROJECT_NAME
+task-mappings create EVERGREEN_PROJECT_NAME
 ```
 Currently, it can only analyze public git repos. Private repo support is coming in a future version.
 
 Its options are described below.
 ```
-  --start TEXT                    The date to begin analyzing the project at - has to be an iso date.
+  --verbose                       Show logs.
+
+  --after TEXT                    The date to begin analyzing the project at - has to be an iso date.
                                   Example: 2019-10-11T19:10:38
                                   [required]
 
-  --end TEXT                      The date to stop analyzing the project at - has to be an iso date.
+  --before TEXT                   The date to stop analyzing the project at - has to be an iso date.
                                   Example: 2019-10-11T19:10:38
                                   [required]
-
-  --org-name TEXT                 The Github organization name - defaults to mongodb.
 
   --source-file-regex TEXT        Regex to determine what files mappings will be created for.
-                                  Example: 'src.*'
+                                  Example: '^src/mongo'
                                   [required]
 
-  --module-name TEXT              The name of the associated module that should be analyzed. 
+  --module-name TEXT              The name of the associated module that should be analyzed.
                                   Example: enterprise
 
   --module-source-file-regex TEXT Regex to determine what module files mappings will be created for.
+                                  Example: '^src'
+                                  [required if module-name is non-empty]
+
+  --output-file TEXT              Path to a file where the task mappings should be written to.
+                                  Example: 'output.txt'
+
+  --build-variant-regex           Regex to determine what build variants to analyze. Compares to their display name.
                                   Example: 'src.*'
+                                  Defaults to: '!.*'
+
+  --help                          Show this message and exit.
+```
+
+## Create test mappings
+The test mapping cli command has only one required argument - the name of an evergreen project.
+In order to run it, run the below.
+```
+test-mappings create EVERGREEN_PROJECT_NAME
+```
+
+Its options are described below.
+```
+  --verbose                       Show logs.
+
+  --after TEXT                    The date to begin analyzing the project at - has to be an iso date.
+                                  Example: 2019-10-11T19:10:38
+                                  [required]
+
+  --before TEXT                   The date to stop analyzing the project at - has to be an iso date.
+                                  Example: 2019-10-11T19:10:38
+                                  [required]
+
+  --source-file-regex TEXT        Regex to determine which source files the mappings will be created for.
+                                  Example: '^src/mongo'
+                                  [required]
+
+  --test-file-regex TEXT          Regex to determine which test files the mappings will be created for.
+                                  Example: '^jstests.*'
+                                  [required]
+
+  --module-name TEXT              The name of the associated module that should be analyzed.
+                                  Example: enterprise
+
+  --module-source-file-regex TEXT Regex to determine which module souce files the mappings will be created for.
+                                  Example: '^src'
+                                  [required if module-name is non-empty]
+
+  --module-test-file-regex TEXT   Regex to determine what module test files the mappings will be created for.
+                                  Example: '^jstests'
                                   [required if module-name is non-empty]
 
   --output-file TEXT              Path to a file where the task mappings should be written to.
                                   Example: 'output.txt'
 
   --help                          Show this message and exit.
-
 ```
 
 
@@ -116,6 +165,15 @@ new state of the service before that change can be merged to master.
 Documentation for how the swagger documentation is done can be found
 [here](https://flask-restplus.readthedocs.io/en/stable/swagger.html).
 
+## Merging code to master
+
+Merges to the selected-tests repo should be done via the Evergreen [Commit Queue](https://github.com/evergreen-ci/evergreen/wiki/Commit-Queue).
+
+When your PR is ready to merge, add a comment with the following:
+```
+evergreen merge
+```
+
 ## Deploy
 
 Deployment is done via helm to [Kanopy](https://github.com/10gen/kanopy-docs#index) (MongoDB
@@ -151,3 +209,20 @@ To make an API request, follow the following steps:
  "auth_user=< your auth_user >;auth_token=< your auth_token >"
  https://selected-tests.server-tig.prod.corp.mongodb.com/health
  ```
+
+### Commands
+
+Before starting the system, a MongoDB instance should be configured with the
+`create-indexes` command. This will add the appropriate indexes:
+
+```
+$ init-mongo create-indexes
+```
+
+Next, a cron job should run the `process-test-mappings` command once every day. This will gather
+the unprocessed test mapping create requests and process them so that test mappings for that
+project are added to the db.
+
+```
+$ work-items process-test-mappings
+```

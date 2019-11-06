@@ -1,19 +1,20 @@
 """Method to create the task mappings for a given evergreen project."""
 from datetime import datetime
 from typing import List, Dict, Generator
-import os.path
-import tempfile
-from re import Pattern, match
+from tempfile import TemporaryDirectory
+from re import Pattern, match, compile
 
-from evergreen.api import Version, Build, Task, CachedEvergreenApi
+from evergreen.api import Version, Build, Task, EvergreenApi
 from evergreen.manifest import ManifestModule
 from boltons.iterutils import windowed_iter
 from git import Repo, DiffIndex
 from structlog import get_logger
 
+from selectedtests.git_helper import get_changed_files, init_repo
+from selectedtests.evergreen_helper import get_evg_project
+
 LOGGER = get_logger(__name__)
 
-GITHUB_BASE_URL = "https://github.com"
 SEEN_COUNT_KEY = "seen_count"
 TASK_BUILDS_KEY = "builds"
 
@@ -31,26 +32,26 @@ class TaskMappings:
     @classmethod
     def create_task_mappings(
         cls,
-        evg_api: CachedEvergreenApi,
+        evg_api: EvergreenApi,
         evergreen_project: str,
-        start_date: datetime,
-        end_date: datetime,
-        org_name: str,
+        after_date: datetime,
+        before_date: datetime,
         file_regex: Pattern,
-        module_name: str,
-        module_file_regex: Pattern,
+        module_name: str = None,
+        module_file_regex: Pattern = None,
+        build_regex: Pattern = compile("!.*"),
     ):
         """
         Create the task mappings for an evergreen project. Optionally looks at an associated module.
 
         :param evg_api: An instance of the evg_api client
         :param evergreen_project: The name of the evergreen project to analyze.
-        :param start_date: The date at which to start analyzing versions of the project.
-        :param end_date: The date up to which we should analyze versions of the project.
-        :param org_name: Name of the github org that the repo in the evergreen project belongs to.
+        :param after_date: The date at which to start analyzing versions of the project.
+        :param before_date: The date up to which we should analyze versions of the project.
         :param file_regex: Regex pattern to match changed files against.
         :param module_name: Name of the module associated with the evergreen project to also analyze
         :param module_file_regex: Regex pattern to match changed files of the module against.
+        :param build_regex: Regex pattern to match build variant names against. Defaults to "!.*"
         :return: An instance of the task mappings class
         """
         project_versions: Generator[Version] = evg_api.versions_by_project(evergreen_project)
@@ -62,14 +63,20 @@ class TaskMappings:
         branch = ""
         repo_name = ""
 
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with TemporaryDirectory() as temp_dir:
             for next_version, version, prev_version in windowed_iter(project_versions, 3):
-                if version.create_time < start_date:
+                if version.create_time < after_date:
                     break
-                if version.create_time > end_date:
+                if version.create_time > before_date:
                     continue
                 if base_repo is None:
-                    base_repo = _init_repo(temp_dir, org_name, version.repo, version.branch)
+                    try:
+                        base_repo = _get_evg_project_and_init_repo(
+                            evg_api, evergreen_project, temp_dir
+                        )
+                    except ValueError as e:
+                        LOGGER.exception(str(e))
+                        raise e
                     branch = version.branch
                     repo_name = version.repo
 
@@ -87,8 +94,8 @@ class TaskMappings:
                     cur_module = _get_associated_module(version, module_name)
                     prev_module = _get_associated_module(prev_version, module_name)
                     if cur_module is not None and module_repo is None:
-                        module_repo = _init_repo(
-                            temp_dir, cur_module.owner, cur_module.repo, cur_module.branch
+                        module_repo = init_repo(
+                            temp_dir, cur_module.repo, cur_module.branch, cur_module.owner
                         )
 
                     module_changed_files = _get_module_changed_files(
@@ -96,7 +103,7 @@ class TaskMappings:
                     )
                     changed_files.extend(module_changed_files)
 
-                flipped_tasks = _get_flipped_tasks(prev_version, version, next_version)
+                flipped_tasks = _get_flipped_tasks(prev_version, version, next_version, build_regex)
 
                 if len(flipped_tasks) > 0:
                     _map_tasks_to_files(changed_files, flipped_tasks, task_mappings)
@@ -133,6 +140,17 @@ class TaskMappings:
         return task_mappings
 
 
+def _get_evg_project_and_init_repo(
+    evg_api: EvergreenApi, evergreen_project: str, temp_dir: TemporaryDirectory
+):
+    project_info = get_evg_project(evg_api, evergreen_project)
+    if project_info is None:
+        raise ValueError(f"The evergreen project {evergreen_project} does not exist")
+    return init_repo(
+        temp_dir, project_info.repo_name, project_info.branch_name, project_info.owner_name
+    )
+
+
 def _get_filtered_files(diff: DiffIndex, regex: Pattern) -> List[str]:
     """
     Get the list of changed files.
@@ -142,9 +160,9 @@ def _get_filtered_files(diff: DiffIndex, regex: Pattern) -> List[str]:
     :return: A list of the changed files that matched the given regex pattern.
     """
     re: List[str] = []
-    for file in _get_changed_files(diff):
-        if match(regex, file.b_path):
-            re.append(file.b_path)
+    for file in get_changed_files(diff, LOGGER):
+        if match(regex, file):
+            re.append(file)
     return re
 
 
@@ -227,64 +245,32 @@ def _map_tasks_to_files(changed_files: List[str], flipped_tasks: Dict, task_mapp
                 builds_to_task_mappings[cur_task] = cur_flips_for_task + 1
 
 
-def _init_repo(temp_dir, org_name: str, repo_name: str, branch: str) -> Repo:
+def _filter_non_matching_distros(builds: List[Build], build_regex: Pattern) -> List[Build]:
     """
-    Create the given repo in the given directory and checkout the given branch.
-
-    :param temp_dir: The place where to clone the repo to.
-    :param org_name: The org name in github that owns the repo.
-    :param repo_name: The name of the repo to clone.
-    :param branch: The branch to checkout in the repo.
-    :return: An Repo instance that further git operations can be done on.
-    """
-    repo_path = os.path.join(temp_dir, repo_name)
-    url = f"{GITHUB_BASE_URL}/{org_name}/{repo_name}.git"
-    repo = Repo.clone_from(url, repo_path)
-    origin = repo.remotes["origin"]
-    repo.create_head(branch, origin.refs[branch]).set_tracking_branch(
-        origin.refs[branch]
-    ).checkout()
-    return repo
-
-
-def _get_changed_files(diff: DiffIndex):
-    """
-    Create a generator for the diff index. We only want modified, added, and removed files.
-
-    :param diff: The diff to generate files out of.
-    """
-    for patch in diff.iter_change_type("M"):
-        yield patch
-
-    for patch in diff.iter_change_type("A"):
-        yield patch
-
-    for patch in diff.iter_change_type("R"):
-        yield patch
-
-
-def _filter_non_required_distros(builds: List[Build]) -> List[Build]:
-    """
-    Filter the distros that aren't required in evergreen.
+    Filter the distros that don't match the given regex.
 
     :param builds: The builds to put through the filter.
+    :param build_regex: Regex to match the builds' display_names against
     :return: A list of the builds that are required.
     """
-    return [build for build in builds if build.display_name.startswith("!")]
+    return [build for build in builds if match(build_regex, build.display_name)]
 
 
-def _get_flipped_tasks(prev_version: Version, version: Version, next_version: Version) -> Dict:
+def _get_flipped_tasks(
+    prev_version: Version, version: Version, next_version: Version, build_regex: Pattern
+) -> Dict:
     """
     Get the tasks that flipped in the current version.
 
     :param prev_version: The parent of the current version.
     :param version: The version that is being analyzed.
     :param next_version: The child of the current version.
+    :param build_regex: Regex to match the builds' display_names against
     :return: A dictionary with build variants as keys and the list of tasks that flipped in those
      variants as the values.
     """
     builds = version.get_builds()
-    builds = _filter_non_required_distros(builds)
+    builds = _filter_non_matching_distros(builds, build_regex)
     flipped_tasks = {}
     for build in builds:
         flipped_tasks_in_build = _get_flipped_tasks_per_build(build, prev_version, next_version)

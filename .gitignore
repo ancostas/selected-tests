@@ -1,3 +1,4 @@
+*.egg
 *.egg-info
 *.pyc
 .idea
@@ -6,4 +7,5 @@
 __pycache__
 config.yml
 pip-wheel-metadata
+tags
 venv

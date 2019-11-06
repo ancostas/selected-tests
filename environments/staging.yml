@@ -1,0 +1,5 @@
+env:
+  EVG_API_USER: evergreen-user
+envSecrets:
+  EVG_API_KEY: selected-tests-secrets
+  SELECTED_TESTS_MONGO_URI: selected-tests-secrets

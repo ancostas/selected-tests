@@ -21,8 +21,8 @@ def generate_test_mappings(
     evergreen_project: str,
     source_re: Pattern,
     test_re: Pattern,
-    start_date: datetime,
-    end_date: datetime,
+    after_date: datetime,
+    before_date: datetime,
     module_name: str = "",
     module_source_re: Pattern = None,
     module_test_re: Pattern = None,
@@ -38,13 +38,13 @@ def generate_test_mappings(
     :param test_re: Regex pattern to match changed test files against.
     :param module_source_re: Regex pattern to match changed module source files against.
     :param module_test_re: Regex pattern to match changed module test files against.
-    :param start_date: The date at which to start analyzing commits of the project.
-    :param end_date: The date up to which we should analyze commits of the project.
+    :param after_date: The date at which to start analyzing commits of the project.
+    :param before_date: The date up to which we should analyze commits of the project.
     :return: A list of test mappings for the evergreen project and (optionally) its module
     """
     with TemporaryDirectory() as temp_dir:
         test_mappings_list = generate_project_test_mappings(
-            evg_api, evergreen_project, temp_dir, source_re, test_re, start_date, end_date
+            evg_api, evergreen_project, temp_dir, source_re, test_re, after_date, before_date
         )
 
         if module_name:
@@ -56,11 +56,12 @@ def generate_test_mappings(
                     temp_dir,
                     module_source_re,
                     module_test_re,
-                    start_date,
-                    end_date,
+                    after_date,
+                    before_date,
                 )
             )
-
+    log = LOGGER.bind(project=evergreen_project)
+    log.info("Generated test mappings list")
     return test_mappings_list
 
 
@@ -70,8 +71,8 @@ def generate_project_test_mappings(
     temp_dir: TemporaryDirectory,
     source_re: Pattern,
     test_re: Pattern,
-    start_date: datetime,
-    end_date: datetime,
+    after_date: datetime,
+    before_date: datetime,
 ):
     """
     Generate test mappings for an evergreen project.
@@ -81,8 +82,8 @@ def generate_project_test_mappings(
     :param temp_dir: The place where to clone the repo to.
     :param source_re: Regex pattern to match changed source files against.
     :param test_re: Regex pattern to match changed test files against.
-    :param start_date: The date at which to start analyzing commits of the project.
-    :param end_date: The date up to which we should analyze commits of the project.
+    :param after_date: The date at which to start analyzing commits of the project.
+    :param before_date: The date up to which we should analyze commits of the project.
     :return: A list of test mappings for the evergreen project
     """
     evg_project = get_evg_project(evg_api, evergreen_project)
@@ -93,8 +94,8 @@ def generate_project_test_mappings(
         project_repo,
         source_re,
         test_re,
-        start_date,
-        end_date,
+        after_date,
+        before_date,
         evergreen_project,
         evg_project.branch_name,
     )
@@ -108,8 +109,8 @@ def generate_module_test_mappings(
     temp_dir: TemporaryDirectory,
     module_source_re: Pattern,
     module_test_re: Pattern,
-    start_date: datetime,
-    end_date: datetime,
+    after_date: datetime,
+    before_date: datetime,
 ):
     """
     Generate test mappings for an evergreen module.
@@ -120,8 +121,8 @@ def generate_module_test_mappings(
     :param temp_dir: The place where to clone the repo to.
     :param module_source_re: Regex pattern to match changed module source files against.
     :param module_test_re: Regex pattern to match changed module test files against.
-    :param start_date: The date at which to start analyzing commits of the project.
-    :param end_date: The date up to which we should analyze commits of the project.
+    :param after_date: The date at which to start analyzing commits of the project.
+    :param before_date: The date up to which we should analyze commits of the project.
     :return: A list of test mappings for the evergreen module
     """
     module = _get_module(evg_api, evergreen_project, module_name)
@@ -130,8 +131,8 @@ def generate_module_test_mappings(
         module_repo,
         module_source_re,
         module_test_re,
-        start_date,
-        end_date,
+        after_date,
+        before_date,
         evergreen_project,
         module.branch,
     )
@@ -186,8 +187,8 @@ class TestMappings(object):
         repo: Repo,
         source_re: Pattern,
         test_re: Pattern,
-        start_date: datetime,
-        end_date: datetime,
+        after_date: datetime,
+        before_date: datetime,
         project: str,
         branch: str,
     ):
@@ -197,8 +198,8 @@ class TestMappings(object):
         :param repo: The repo that contains the source code for the evergreen project.
         :param source_re: Regex pattern to match changed source files against.
         :param test_re: Regex pattern to match changed test files against.
-        :param start_date: The date at which to start analyzing commits of the project.
-        :param end_date: The date up to which we should analyze commits of the project.
+        :param after_date: The date at which to start analyzing commits of the project.
+        :param before_date: The date up to which we should analyze commits of the project.
         :param project: The name of the evergreen project to analyze.
         :param branch: The branch of the git repo used for the evergreen project.
         :return: An instance of the test mappings class
@@ -206,7 +207,7 @@ class TestMappings(object):
         file_intersection = defaultdict(lambda: defaultdict(int))
         file_count = defaultdict(int)
 
-        LOGGER.debug(f"searching from {start_date} unil {end_date}")
+        LOGGER.debug(f"searching from {after_date} unil {before_date}")
         for commit in repo.iter_commits(repo.head.commit):
             LOGGER.debug(
                 "Investigating commit",
@@ -215,10 +216,10 @@ class TestMappings(object):
                 id=commit.hexsha,
             )
 
-            if commit.committed_datetime < start_date:
+            if commit.committed_datetime < after_date:
                 break
 
-            if commit.committed_datetime > end_date:
+            if commit.committed_datetime > before_date:
                 continue
 
             tests_changed = set()

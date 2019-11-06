@@ -15,7 +15,7 @@ pip install -e .
   - You can find your credentials in your User Settings in the Evergreen UI. The cli looks for them
   in the usual default location, i.e. '~/.evergreen.yml'
 - Location of a mongodb instance
-  - The location of the instance should be in an environment variable called 
+  - The location of the instance should be in an environment variable called
   ```SELECTED_TESTS_MONGO_URI```
 ```
 python src/selectedtests/app/app.py
@@ -33,11 +33,11 @@ Its options are described below.
 ```
   --verbose                       Show logs.
 
-  --start TEXT                    The date to begin analyzing the project at - has to be an iso date.
+  --after TEXT                    The date to begin analyzing the project at - has to be an iso date.
                                   Example: 2019-10-11T19:10:38
                                   [required]
 
-  --end TEXT                      The date to stop analyzing the project at - has to be an iso date.
+  --before TEXT                   The date to stop analyzing the project at - has to be an iso date.
                                   Example: 2019-10-11T19:10:38
                                   [required]
 
@@ -57,8 +57,8 @@ Its options are described below.
 
   --build-variant-regex           Regex to determine what build variants to analyze. Compares to their display name.
                                   Example: 'src.*'
-                                  Defaults to: '!.*'  
-                                
+                                  Defaults to: '!.*'
+
   --help                          Show this message and exit.
 ```
 
@@ -73,11 +73,11 @@ Its options are described below.
 ```
   --verbose                       Show logs.
 
-  --start TEXT                    The date to begin analyzing the project at - has to be an iso date.
+  --after TEXT                    The date to begin analyzing the project at - has to be an iso date.
                                   Example: 2019-10-11T19:10:38
                                   [required]
 
-  --end TEXT                      The date to stop analyzing the project at - has to be an iso date.
+  --before TEXT                   The date to stop analyzing the project at - has to be an iso date.
                                   Example: 2019-10-11T19:10:38
                                   [required]
 
@@ -209,3 +209,20 @@ To make an API request, follow the following steps:
  "auth_user=< your auth_user >;auth_token=< your auth_token >"
  https://selected-tests.server-tig.prod.corp.mongodb.com/health
  ```
+
+### Commands
+
+Before starting the system, a MongoDB instance should be configured with the
+`create-indexes` command. This will add the appropriate indexes:
+
+```
+$ init-mongo create-indexes
+```
+
+Next, a cron job should run the `process-test-mappings` command once every day. This will gather
+the unprocessed test mapping create requests and process them so that test mappings for that
+project are added to the db.
+
+```
+$ work-items process-test-mappings
+```

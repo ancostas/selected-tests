@@ -14,6 +14,7 @@ pipeline:
       event: push
 
   deploy_to_staging:
+    group: deploy
     image: quay.io/ipedrazas/drone-helm
     # The release name should be unique across the namespace, the app or repo name is recommended
     release: selected-tests
@@ -23,7 +24,7 @@ pipeline:
     prefix: staging
     secrets: [ staging_kubernetes_token ]
     helm_repos: mongodb=https://10gen.github.io/helm-charts
-    chart: mongodb/web-app
+    chart: mongodb/cronjobs
     chart_version: 4.1.0
     tiller_ns: server-tig
     client_only: true

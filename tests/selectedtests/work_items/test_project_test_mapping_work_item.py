@@ -12,15 +12,6 @@ MODULE_SOURCE_FILE_REGEX = ".*source"
 MODULE_TEST_FILE_REGEX = ".*test"
 
 
-class TestSetupIndexes:
-    def test_indexes_created(self):
-        collection = MagicMock()
-
-        under_test.setup_indexes(collection)
-
-        collection.create_indexes.assert_called_once()
-
-
 class TestProjectTestMappingWorkItem:
     def test_create_new_test_mappings(self):
         work_item = under_test.ProjectTestMappingWorkItem.new_test_mappings(

@@ -3,22 +3,10 @@ import structlog
 
 from datetime import datetime, timedelta
 from pymongo.errors import DuplicateKeyError
-from pymongo.collection import ReturnDocument
-from pymongo import IndexModel, ASCENDING
+from pymongo.collection import Collection, ReturnDocument
 
 LOGGER = structlog.get_logger()
 WORK_ITEM_TTL = timedelta(weeks=2).total_seconds()
-
-
-def setup_indexes(collection):
-    """
-    Create appropriate indexes for ProjectTestMappingWorkItems.
-
-    :param collection: Collection to add indexes to.
-    """
-    index = IndexModel([("project", ASCENDING)], unique=True)
-    collection.create_indexes([index])
-    LOGGER.info("Adding indexes for collection", collection=collection.name)
 
 
 class ProjectTestMappingWorkItem(object):
@@ -93,7 +81,7 @@ class ProjectTestMappingWorkItem(object):
         )
 
     @classmethod
-    def next(cls, collection):
+    def next(cls, collection: Collection):
         """
         Find a Work Item on the queue ready for work, or None if nothing is ready.
 
@@ -120,7 +108,7 @@ class ProjectTestMappingWorkItem(object):
             )
         return None
 
-    def insert(self, collection):
+    def insert(self, collection: Collection):
         """
         Add this work item to the Mongo collection.
 
@@ -146,6 +134,10 @@ class ProjectTestMappingWorkItem(object):
         except DuplicateKeyError:
             return False
 
-    def complete(self, collection):
-        """Mark this work item as complete."""
+    def complete(self, collection: Collection):
+        """
+        Mark this work item as complete.
+
+        :param collection: Mongo collection containing queue.
+        """
         collection.update_one({"project": self.project}, {"$currentDate": {"end_time": True}})

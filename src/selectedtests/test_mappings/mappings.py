@@ -4,7 +4,7 @@ import os.path
 
 from datetime import datetime
 from collections import defaultdict
-from re import Pattern
+from typing import Pattern
 from git import Repo
 from tempfile import TemporaryDirectory
 
@@ -42,6 +42,13 @@ def generate_test_mappings(
     :param before_date: The date up to which we should analyze commits of the project.
     :return: A list of test mappings for the evergreen project and (optionally) its module
     """
+    log = LOGGER.bind(
+        project=evergreen_project,
+        module=module_name,
+        after_date=after_date,
+        before_date=before_date,
+    )
+    log.info("Starting test mapping processing")
     with TemporaryDirectory() as temp_dir:
         test_mappings_list = generate_project_test_mappings(
             evg_api, evergreen_project, temp_dir, source_re, test_re, after_date, before_date
@@ -60,8 +67,7 @@ def generate_test_mappings(
                     before_date,
                 )
             )
-    log = LOGGER.bind(project=evergreen_project)
-    log.info("Generated test mappings list")
+    log.info("Generated test mappings list", test_mappings_length=len(test_mappings_list))
     return test_mappings_list
 
 
@@ -207,7 +213,6 @@ class TestMappings(object):
         file_intersection = defaultdict(lambda: defaultdict(int))
         file_count = defaultdict(int)
 
-        LOGGER.debug(f"searching from {after_date} unil {before_date}")
         for commit in repo.iter_commits(repo.head.commit):
             LOGGER.debug(
                 "Investigating commit",

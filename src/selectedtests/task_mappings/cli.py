@@ -107,38 +107,28 @@ def create(
 
     file_regex = re.compile(source_file_regex)
 
-    module_file_regex = None
+    module_file_re = None
     if module_name:
         if not module_source_file_regex:
             raise click.ClickException(
                 "A module source file regex is required when a module is being analyzed"
             )
         else:
-            module_file_regex = re.compile(module_source_file_regex)
+            module_file_re = re.compile(module_source_file_regex)
+            build_variant_re = re.compile(build_variant_regex)
 
     LOGGER.info(f"Creating task mappings for {evergreen_project}")
 
-    if build_variant_regex:
-        mappings = TaskMappings.create_task_mappings(
-            evg_api,
-            evergreen_project,
-            after_date,
-            before_date,
-            file_regex,
-            module_name,
-            module_file_regex,
-            re.compile(build_variant_regex),
-        )
-    else:
-        mappings = TaskMappings.create_task_mappings(
-            evg_api,
-            evergreen_project,
-            after_date,
-            before_date,
-            file_regex,
-            module_name,
-            module_file_regex,
-        )
+    mappings = TaskMappings.create_task_mappings(
+        evg_api,
+        evergreen_project,
+        after_date,
+        before_date,
+        file_regex,
+        module_name,
+        module_file_re,
+        build_variant_re,
+    )
 
     transformed_mappings = mappings.transform()
 

@@ -37,7 +37,95 @@ def _clear_in_progress_work(collection: Collection):
     collection.update_many({"end_time": None}, {"$set": {"start_time": None}})
 
 
-def process_queued_work_items(
+def process_queued_task_mapping_work_items(
+    evg_api: EvergreenApi, mongo: MongoWrapper, after_date: datetime, before_date: datetime
+):
+    """
+    Process task mapping work items that have not yet been processed.
+
+    :param evg_api: An instance of the evg_api client
+    :param mongo: An instance of MongoWrapper.
+    :param after_date: The date at which to start analyzing commits of the project.
+    :param before_date: The date up to which we should analyze commits of the project.
+    """
+    _clear_in_progress_work(mongo.task_mappings_queue())
+    try:
+        while True:
+            out_of_work = _process_one_task_mapping_work_item(
+                evg_api, mongo, after_date, before_date
+            )
+            if out_of_work:
+                break
+    except:  # noqa: E722
+        LOGGER.warning("Unexpected exception processing task mapping work item", exc_info=1)
+
+
+def _process_one_task_mapping_work_item(
+    evg_api: EvergreenApi, mongo: MongoWrapper, after_date: datetime, before_date: datetime
+) -> bool:
+    """
+    Process a task mapping work item.
+
+    :param evg_api: An instance of the evg_api client
+    :param mongo: An instance of MongoWrapper.
+    :param after_date: The date at which to start analyzing commits of the project.
+    :param before_date: The date up to which we should analyze commits of the project.
+    :return: Whether all work items have been processed.
+    """
+    LOGGER.info("Starting task mapping work item processing")
+    work_item = ProjectTaskMappingWorkItem.next(mongo.task_mappings_queue())
+    if not work_item:
+        LOGGER.info("No more test mapping work items found")
+        return True
+
+    log = LOGGER.bind(project=work_item.project, module=work_item.module)
+    log.info("Starting task mapping work item processing for work_item")
+    if _run_create_task_mappings(evg_api, mongo, work_item, after_date, before_date, log):
+        work_item.complete(mongo.task_mappings_queue())
+
+    return False
+
+
+def _run_create_task_mappings(
+    evg_api: EvergreenApi,
+    mongo: MongoWrapper,
+    work_item: ProjectTestMappingWorkItem,
+    after_date: datetime,
+    before_date: datetime,
+    log: Any,
+) -> bool:
+    """
+    Generate task mappings for a given work item.
+
+    :param evg_api: An instance of the evg_api client
+    :param mongo: An instance of MongoWrapper.
+    :param work_item: An instance of ProjectTestMappingWorkItem.
+    :param after_date: The date at which to start analyzing commits of the project.
+    :param before_date: The date up to which we should analyze commits of the project.
+    """
+    source_re = re.compile(work_item.source_file_regex)
+    module_source_re = None
+    if work_item.module:
+        module_source_re = re.compile(work_item.module_source_file_regex)
+
+    mappings = TaskMappings.create_task_mappings(
+        evg_api,
+        work_item.project,
+        after_date,
+        before_date,
+        source_re,
+        work_item.module,
+        module_source_re,
+        work_item.build_variant_regex,
+    )
+
+    transformed_mappings = mappings.transform()
+    if transformed_mappings:
+        mongo.task_mappings().insert_many(transformed_mappings)
+    log.info("Finished task mapping work item processing")
+
+
+def process_queued_test_mapping_work_items(
     evg_api: EvergreenApi, mongo: MongoWrapper, after_date: datetime, before_date: datetime
 ):
     """
@@ -51,14 +139,16 @@ def process_queued_work_items(
     _clear_in_progress_work(mongo.test_mappings_queue())
     try:
         while True:
-            out_of_work = _process_one_work_item(evg_api, mongo, after_date, before_date)
+            out_of_work = _process_one_test_mapping_work_item(
+                evg_api, mongo, after_date, before_date
+            )
             if out_of_work:
                 break
     except:  # noqa: E722
         LOGGER.warning("Unexpected exception processing test mapping work item", exc_info=1)
 
 
-def _process_one_work_item(
+def _process_one_test_mapping_work_item(
     evg_api: EvergreenApi, mongo: MongoWrapper, after_date: datetime, before_date: datetime
 ) -> bool:
     """

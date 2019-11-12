@@ -47,9 +47,7 @@ class TestProcessOneWorkItem:
         evg_api_mock = MagicMock()
         mongo_mock = MagicMock()
 
-        work_done = under_test._process_one_test_mapping_work_item(
-            evg_api_mock, mongo_mock, None, None
-        )
+        work_done = under_test._process_one_test_mapping_work_item(evg_api_mock, mongo_mock, None, None)
 
         assert work_done
 
@@ -63,9 +61,7 @@ class TestProcessOneWorkItem:
         evg_api_mock = MagicMock()
         mongo_mock = MagicMock()
 
-        work_done = under_test._process_one_test_mapping_work_item(
-            evg_api_mock, mongo_mock, None, None
-        )
+        work_done = under_test._process_one_test_mapping_work_item(evg_api_mock, mongo_mock, None, None)
 
         work_item_mock.next.return_value.complete.assert_called_once()
         assert not work_done
@@ -80,9 +76,7 @@ class TestProcessOneWorkItem:
         evg_api_mock = MagicMock()
         mongo_mock = MagicMock()
 
-        work_done = under_test._process_one_test_mapping_work_item(
-            evg_api_mock, mongo_mock, None, None
-        )
+        work_done = under_test._process_one_test_mapping_work_item(evg_api_mock, mongo_mock, None, None)
 
         work_item_mock.next.return_value.complete.assert_not_called()
         assert not work_done

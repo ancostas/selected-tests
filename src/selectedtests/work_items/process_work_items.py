@@ -118,7 +118,6 @@ def _run_create_task_mappings(
         module_source_re,
         work_item.build_variant_regex,
     )
-
     transformed_mappings = mappings.transform()
     if transformed_mappings:
         mongo.task_mappings().insert_many(transformed_mappings)
@@ -139,9 +138,7 @@ def process_queued_test_mapping_work_items(
     _clear_in_progress_work(mongo.test_mappings_queue())
     try:
         while True:
-            out_of_work = _process_one_test_mapping_work_item(
-                evg_api, mongo, after_date, before_date
-            )
+            out_of_work = _process_one_test_mapping_work_item(evg_api, mongo, after_date, before_date)
             if out_of_work:
                 break
     except:  # noqa: E722

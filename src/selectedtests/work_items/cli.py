@@ -3,10 +3,7 @@ import click
 import pytz
 
 from datetime import datetime, timedelta
-from selectedtests.work_items.process_work_items import (
-    process_queued_task_mapping_work_items,
-    process_queued_test_mapping_work_items,
-)
+from selectedtests.work_items.process_work_items import process_queued_test_mapping_work_items, process_queued_task_mapping_work_items
 from selectedtests.helpers import get_evg_api, get_mongo_wrapper, setup_logging
 
 
@@ -28,9 +25,7 @@ def process_test_mappings(ctx):
     """Process test mapping work items that have not yet been processed."""
     before_date = datetime.utcnow().replace(tzinfo=pytz.UTC)
     after_date = before_date - timedelta(days=6 * 30)  # 6 months
-    process_queued_test_mapping_work_items(
-        ctx.obj["evg_api"], ctx.obj["mongo"], after_date, before_date
-    )
+    process_queued_test_mapping_work_items(ctx.obj["evg_api"], ctx.obj["mongo"], after_date, before_date)
 
 
 @cli.command()

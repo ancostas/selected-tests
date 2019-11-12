@@ -101,6 +101,7 @@ class ProjectTaskMappingWorkItem(object):
             )
         return None
 
+
     def insert(self, collection) -> bool:
         """
         Add this work item to the Mongo collection.

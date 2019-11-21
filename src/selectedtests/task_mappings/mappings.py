@@ -14,6 +14,7 @@ from structlog import get_logger
 
 from selectedtests.git_helper import get_changed_files, init_repo
 from selectedtests.evergreen_helper import get_evg_project
+import pdb
 
 LOGGER = get_logger(__name__)
 
@@ -124,8 +125,7 @@ class TaskMappings:
 
             for job in jobs:
                 changed_files, flipped_tasks = job.result()
-                if len(flipped_tasks) > 0:
-                    _map_tasks_to_files(changed_files, flipped_tasks, task_mappings)
+                _map_tasks_to_files(changed_files, flipped_tasks, task_mappings)
 
         return TaskMappings(task_mappings, evergreen_project, repo_name, branch)
 
@@ -255,12 +255,13 @@ def _map_tasks_to_files(changed_files: List[str], flipped_tasks: Dict, task_mapp
             file_name, {TASK_BUILDS_KEY: {}, SEEN_COUNT_KEY: 0}
         )
         task_mappings_for_file[SEEN_COUNT_KEY] = task_mappings_for_file[SEEN_COUNT_KEY] + 1
-        build_mappings = task_mappings_for_file[TASK_BUILDS_KEY]
-        for build_name in flipped_tasks:
-            builds_to_task_mappings: Dict[str:Dict] = build_mappings.setdefault(build_name, {})
-            for cur_task in flipped_tasks.get(build_name):
-                cur_flips_for_task = builds_to_task_mappings.setdefault(cur_task, 0)
-                builds_to_task_mappings[cur_task] = cur_flips_for_task + 1
+        if len(flipped_tasks) > 0:
+            build_mappings = task_mappings_for_file[TASK_BUILDS_KEY]
+            for build_name in flipped_tasks:
+                builds_to_task_mappings: Dict[str:Dict] = build_mappings.setdefault(build_name, {})
+                for cur_task in flipped_tasks.get(build_name):
+                    cur_flips_for_task = builds_to_task_mappings.setdefault(cur_task, 0)
+                    builds_to_task_mappings[cur_task] = cur_flips_for_task + 1
 
 
 def _filter_non_matching_distros(builds: List[Build], build_regex: Pattern) -> List[Build]:

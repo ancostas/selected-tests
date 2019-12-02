@@ -7,11 +7,13 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch, MagicMock
 
 import selectedtests.test_mappings.create_test_mappings as under_test
+from selectedtests.test_mappings.after_limit import AfterLimit
 
 NS = "selectedtests.test_mappings.create_test_mappings"
 SOURCE_RE = re.compile(".*source")
 TEST_RE = re.compile(".*test")
-ONE_DAY_AGO = datetime.combine(datetime.now() - timedelta(days=1), time()).replace(tzinfo=pytz.UTC)
+ONE_DAY_AGO= datetime.combine(datetime.now() - timedelta(days=1), time()).replace(tzinfo=pytz.UTC)
+ONE_DAY_AGO_LIMIT = AfterLimit(after_date=ONE_DAY_AGO)
 PROJECT = "my_project"
 BRANCH = "master"
 
@@ -26,7 +28,7 @@ class TestTestMappings:
         with TemporaryDirectory() as tmpdir:
             repo = repo_with_no_source_files_changed(tmpdir)
             test_mappings = under_test.TestMappings.create_mappings(
-                repo, SOURCE_RE, TEST_RE, ONE_DAY_AGO, PROJECT, BRANCH
+                repo, SOURCE_RE, TEST_RE, ONE_DAY_AGO_LIMIT, PROJECT, BRANCH
             )
             test_mappings_list = test_mappings.get_mappings()
             assert len(test_mappings_list) == 0
@@ -37,7 +39,7 @@ class TestTestMappings:
         with TemporaryDirectory() as tmpdir:
             repo = repo_with_one_source_file_and_no_test_files_changed(tmpdir)
             test_mappings = under_test.TestMappings.create_mappings(
-                repo, SOURCE_RE, TEST_RE, ONE_DAY_AGO, PROJECT, BRANCH
+                repo, SOURCE_RE, TEST_RE, ONE_DAY_AGO_LIMIT, PROJECT, BRANCH
             )
             test_mappings_list = test_mappings.get_mappings()
             assert len(test_mappings_list) == 0
@@ -48,7 +50,7 @@ class TestTestMappings:
         with TemporaryDirectory() as tmpdir:
             repo = repo_with_no_source_files_and_one_test_file_changed(tmpdir)
             test_mappings = under_test.TestMappings.create_mappings(
-                repo, SOURCE_RE, TEST_RE, ONE_DAY_AGO, PROJECT, BRANCH
+                repo, SOURCE_RE, TEST_RE, ONE_DAY_AGO_LIMIT, PROJECT, BRANCH
             )
             test_mappings_list = test_mappings.get_mappings()
             assert len(test_mappings_list) == 0
@@ -59,7 +61,7 @@ class TestTestMappings:
         with TemporaryDirectory() as tmpdir:
             repo = repo_with_one_source_and_test_file_changed_in_same_commit(tmpdir)
             test_mappings = under_test.TestMappings.create_mappings(
-                repo, SOURCE_RE, TEST_RE, ONE_DAY_AGO, PROJECT, BRANCH
+                repo, SOURCE_RE, TEST_RE, ONE_DAY_AGO_LIMIT, PROJECT, BRANCH
             )
             test_mappings_list = test_mappings.get_mappings()
 
@@ -79,7 +81,7 @@ class TestTestMappings:
         with TemporaryDirectory() as tmpdir:
             repo = repo_with_one_source_file_and_one_test_file_changed_in_different_commits(tmpdir)
             test_mappings = under_test.TestMappings.create_mappings(
-                repo, SOURCE_RE, TEST_RE, ONE_DAY_AGO, PROJECT, BRANCH
+                repo, SOURCE_RE, TEST_RE, ONE_DAY_AGO_LIMIT, PROJECT, BRANCH
             )
             test_mappings_list = test_mappings.get_mappings()
             assert len(test_mappings_list) == 0
@@ -90,8 +92,9 @@ class TestTestMappings:
             three_days_ago = datetime.combine(datetime.now() - timedelta(days=3), time()).replace(
                 tzinfo=pytz.UTC
             )
+            three_days_ago_limit = AfterLimit(after_date=three_days_ago)
             test_mappings = under_test.TestMappings.create_mappings(
-                repo, SOURCE_RE, TEST_RE, three_days_ago, PROJECT, BRANCH
+                repo, SOURCE_RE, TEST_RE, three_days_ago_limit, PROJECT, BRANCH
             )
             test_mappings_list = test_mappings.get_mappings()
 
@@ -105,7 +108,7 @@ class TestTestMappings:
         with TemporaryDirectory() as tmpdir:
             repo = repo_with_files_added_two_days_ago(tmpdir)
             test_mappings = under_test.TestMappings.create_mappings(
-                repo, SOURCE_RE, TEST_RE, ONE_DAY_AGO, PROJECT, BRANCH
+                repo, SOURCE_RE, TEST_RE, ONE_DAY_AGO_LIMIT, PROJECT, BRANCH
             )
             test_mappings_list = test_mappings.get_mappings()
             assert len(test_mappings_list) == 0
@@ -131,7 +134,7 @@ class TestGenerateProjectTestMappings:
                 tmpdir
             )
             mappings = under_test.generate_project_test_mappings(
-                mock_evg_api, "mongodb-mongo-master", tmpdir, SOURCE_RE, TEST_RE, ONE_DAY_AGO
+                mock_evg_api, "mongodb-mongo-master", tmpdir, SOURCE_RE, TEST_RE, ONE_DAY_AGO_LIMIT
             )
         assert len(mappings) == 1
         test_mapping = mappings[0]
@@ -169,7 +172,7 @@ class TestGenerateModuleTestMappings:
                 tmpdir,
                 SOURCE_RE,
                 TEST_RE,
-                ONE_DAY_AGO,
+                ONE_DAY_AGO_LIMIT,
             )
         assert len(mappings) == 1
         test_mapping = mappings[0]
@@ -198,7 +201,7 @@ class TestGenerateTestMappings:
             "mongodb-mongo-master",
             SOURCE_RE,
             TEST_RE,
-            ONE_DAY_AGO,
+            ONE_DAY_AGO_LIMIT,
             "my-module",
             SOURCE_RE,
             TEST_RE,
@@ -210,6 +213,6 @@ class TestGenerateTestMappings:
         mock_evg_api = MagicMock()
         generate_project_test_mappings_mock.return_value = ["mock-project-mappings"]
         mappings = under_test.generate_test_mappings(
-            mock_evg_api, "mongodb-mongo-master", SOURCE_RE, TEST_RE, ONE_DAY_AGO
+            mock_evg_api, "mongodb-mongo-master", SOURCE_RE, TEST_RE, ONE_DAY_AGO_LIMIT
         )
         assert mappings == ["mock-project-mappings"]

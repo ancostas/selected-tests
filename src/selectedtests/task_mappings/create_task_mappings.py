@@ -57,7 +57,9 @@ class TaskMappings:
         """
         log = LOGGER.bind(project=evergreen_project, module=module_name, after_date=after_date)
         log.info("Starting to generate task mappings")
-        project_versions = evg_api.versions_by_project(evergreen_project)
+        project_versions = evg_api.versions_by_project_time_window(
+            evergreen_project, datetime.utcnow(), after_date
+        )
 
         task_mappings = {}
 
@@ -75,9 +77,6 @@ class TaskMappings:
             jobs = []
             with Executor(max_workers=MAX_WORKERS) as exe:
                 for next_version, version, prev_version in windowed_iter(project_versions, 3):
-                    if version.create_time < after_date:
-                        break
-
                     if not branch or not repo_name:
                         branch = version.branch
                         repo_name = version.repo

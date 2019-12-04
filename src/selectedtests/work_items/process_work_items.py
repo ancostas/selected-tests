@@ -215,11 +215,6 @@ def _run_create_test_mappings(
     )
     if test_mappings_list:
         mongo.test_mappings().insert_many(test_mappings_list)
-        mongo.test_mappings_project_config().update_one(
-            {"project": work_item.project}, {"$set": {"lydia": True}}, True
-        )
-    else:
-        log.info("No test mappings generated")
     log.info("Finished test mapping work item processing")
 
     return True

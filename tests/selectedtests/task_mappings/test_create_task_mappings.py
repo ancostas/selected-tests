@@ -21,7 +21,7 @@ class TestFullRunThrough:
         self, filtered_files_mock, init_repo_mock, evg_versions, expected_task_mappings_output
     ):
         mock_evg_api = MagicMock()
-        mock_evg_api.versions_by_project_time_window.return_value = evg_versions
+        mock_evg_api.versions_by_project.return_value = evg_versions
 
         project_name = "mongodb-mongo-master"
         mock_evg_api.all_projects.return_value = [
@@ -59,10 +59,10 @@ class TestCreateTaskMappings:
         get_evg_project_and_init_repo_mock,
     ):
         evg_api_mock = MagicMock()
-        evg_api_mock.versions_by_project_time_window.return_value = [
+        evg_api_mock.versions_by_project.return_value = [
             MagicMock(create_time=datetime.combine(date(1, 1, 1), time(1, 2, i))) for i in range(3)
         ]
-        evg_api_mock.versions_by_project_time_window.return_value.reverse()
+        evg_api_mock.versions_by_project.return_value.reverse()
         associated_module_mock.return_value = None
 
         module_changed_mock.return_value = {"module_file"}
@@ -114,10 +114,10 @@ class TestCreateTaskMappings:
         get_evg_project_and_init_repo_mock,
     ):
         evg_api_mock = MagicMock()
-        evg_api_mock.versions_by_project_time_window.return_value = [
+        evg_api_mock.versions_by_project.return_value = [
             MagicMock(create_time=datetime.combine(date(1, 1, 1), time(1, 2, i))) for i in range(3)
         ]
-        evg_api_mock.versions_by_project_time_window.return_value.reverse()
+        evg_api_mock.versions_by_project.return_value.reverse()
 
         # We still mock the two below so that we can check to make sure even if the version has a
         # module and that module has changed files in it, we don't actually add the changed files
@@ -197,7 +197,7 @@ class TestCreateTaskMappings:
         self, filtered_mock, diff_mock, non_matching_filter_mock, get_evg_project_and_init_repo_mock
     ):
         evg_api_mock = MagicMock()
-        evg_api_mock.versions_by_project_time_window.return_value = [
+        evg_api_mock.versions_by_project.return_value = [
             MagicMock(create_time=datetime.combine(date(1, 1, 1), time(1, 2, i))) for i in range(3)
         ]
         evg_api_mock.versions_by_project.return_value.reverse()

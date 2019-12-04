@@ -196,7 +196,7 @@ class TestMappings(object):
                 id=commit.hexsha,
             )
 
-            if after_limit.check_commit_before_limit(commit):
+            if after_limit.check_commit_after_limit(commit):
                 break
 
             tests_changed = set()

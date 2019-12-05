@@ -2,7 +2,6 @@
 import os.path
 import json
 import logging
-from datetime import datetime
 import re
 
 from evergreen.api import RetryingEvergreenApi
@@ -41,10 +40,9 @@ def cli(ctx, verbose: bool):
 @click.pass_context
 @click.argument("evergreen_project", required=True)
 @click.option(
-    "--after",
+    "--after-version",
     type=str,
-    help="The date to begin analyzing the project at - has to be an iso date. "
-    "Example: 2019-10-11T19:10:38",
+    help="The version at which to start analyzing versions of the project.",
     required=True,
 )
 @click.option(
@@ -79,7 +77,7 @@ def cli(ctx, verbose: bool):
 def create(
     ctx,
     evergreen_project: str,
-    after: str,
+    after_version: str,
     source_file_regex: str,
     module_name: str,
     module_source_file_regex: str,
@@ -88,14 +86,6 @@ def create(
 ):
     """Create the task mappings for a given evergreen project."""
     evg_api = ctx.obj["evg_api"]
-
-    try:
-        after_date = datetime.fromisoformat(after)
-    except ValueError:
-        raise click.ClickException(
-            "The after date could not be parsed - make sure it's an iso date"
-        )
-
     file_regex = re.compile(source_file_regex)
 
     module_file_regex = None
@@ -116,7 +106,7 @@ def create(
     mappings = TaskMappings.create_task_mappings(
         evg_api,
         evergreen_project,
-        after_date,
+        after_version,
         file_regex,
         module_name,
         module_file_regex,

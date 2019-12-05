@@ -28,20 +28,22 @@ class TestCli:
                 [
                     "create",
                     "mongodb-mongo-master",
-                    "--module-name",
-                    "my-module",
+                    "--after-project-commit",
+                    "SHA1",
                     "--source-file-regex",
                     ".*",
                     "--test-file-regex",
                     ".*",
+                    "--module-name",
+                    "my-module",
+                    "--after-module-commit",
+                    "SHA2",
                     "--module-source-file-regex",
                     ".*",
                     "--module-test-file-regex",
                     ".*",
                     "--output-file",
                     output_file,
-                    "--after",
-                    "2019-10-11T19:10:38",
                 ],
             )
             assert result.exit_code == 0
@@ -51,7 +53,7 @@ class TestCli:
 
     @patch(ns("RetryingEvergreenApi"))
     @patch(ns("generate_test_mappings"))
-    def test_invalid_dates(self, generate_test_mappings_mock, evg_api):
+    def test_module_after_commit_sha_not_passed_in(self, generate_test_mappings_mock, evg_api):
         mock_evg_api = MagicMock()
         evg_api.get_api.return_value = mock_evg_api
         generate_test_mappings_mock.return_value = "mock-response"
@@ -64,25 +66,22 @@ class TestCli:
                 [
                     "create",
                     "mongodb-mongo-master",
-                    "--module-name",
-                    "my-module",
+                    "--after-project-commit",
+                    "SHA1",
                     "--source-file-regex",
                     ".*",
                     "--test-file-regex",
                     ".*",
-                    "--module-source-file-regex",
-                    ".*",
-                    "--module-test-file-regex",
-                    ".*",
+                    "--module-name",
+                    "my-module",
                     "--output-file",
                     output_file,
-                    "--after",
-                    "2019",
                 ],
             )
             assert result.exit_code == 1
             assert (
-                "The after date could not be parsed - make sure it's an iso date" in result.stdout
+                "A module after-commit value is required when a module is being analyzed"
+                in result.stdout
             )
 
     @patch(ns("RetryingEvergreenApi"))
@@ -100,16 +99,18 @@ class TestCli:
                 [
                     "create",
                     "mongodb-mongo-master",
-                    "--module-name",
-                    "my-module",
+                    "--after-project-commit",
+                    "SHA1",
                     "--source-file-regex",
                     ".*",
                     "--test-file-regex",
                     ".*",
+                    "--module-name",
+                    "my-module",
+                    "--after-module-commit",
+                    "SHA2",
                     "--output-file",
                     output_file,
-                    "--after",
-                    "2019-10-11T19:10:38",
                 ],
             )
             assert result.exit_code == 1

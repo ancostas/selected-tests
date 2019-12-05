@@ -121,15 +121,15 @@ def _create_task_mocks(tasks: List) -> List:
 
 def initialize_temp_repo(directory):
     repo = git.Repo.init(directory)
-    repo.index.commit("initial commit -- no files changed")
-    return repo
+    repo_oldest_commit = repo.index.commit("initial commit -- no files changed")
+    return repo, repo_oldest_commit
 
 
 @pytest.fixture(scope="module")
 def repo_with_no_source_files_changed():
     def _repo(temp_directory):
-        repo = initialize_temp_repo(temp_directory)
-        return repo
+        repo, repo_oldest_commit = initialize_temp_repo(temp_directory)
+        return repo, repo_oldest_commit
 
     return _repo
 
@@ -137,12 +137,12 @@ def repo_with_no_source_files_changed():
 @pytest.fixture(scope="module")
 def repo_with_one_source_file_and_no_test_files_changed():
     def _repo(temp_directory):
-        repo = initialize_temp_repo(temp_directory)
+        repo, repo_oldest_commit = initialize_temp_repo(temp_directory)
         source_file = os.path.join(temp_directory, "new-source-file")
         open(source_file, "wb").close()
         repo.index.add([source_file])
         repo.index.commit("add source file")
-        return repo
+        return repo, repo_oldest_commit
 
     return _repo
 
@@ -150,35 +150,35 @@ def repo_with_one_source_file_and_no_test_files_changed():
 @pytest.fixture(scope="module")
 def repo_with_no_source_files_and_one_test_file_changed():
     def _repo(temp_directory):
-        repo = initialize_temp_repo(temp_directory)
+        repo, repo_oldest_commit = initialize_temp_repo(temp_directory)
         test_file = os.path.join(temp_directory, "new-test-file")
         open(test_file, "wb").close()
         repo.index.add([test_file])
         repo.index.commit("add test file")
-        return repo
+        return repo, repo_oldest_commit
 
     return _repo
 
 
 @pytest.fixture(scope="module")
-def repo_with_one_source_and_test_file_changed_in_same_commit():
+def repo_with_source_and_test_file_changed_in_same_commit():
     def _repo(temp_directory):
-        repo = initialize_temp_repo(temp_directory)
+        repo, repo_oldest_commit = initialize_temp_repo(temp_directory)
         source_file = os.path.join(temp_directory, "new-source-file")
         test_file = os.path.join(temp_directory, "new-test-file")
         open(source_file, "wb").close()
         open(test_file, "wb").close()
         repo.index.add([source_file, test_file])
         repo.index.commit("add source and test file in same commit")
-        return repo
+        return repo, repo_oldest_commit
 
     return _repo
 
 
 @pytest.fixture(scope="module")
-def repo_with_one_source_file_and_one_test_file_changed_in_different_commits():
+def repo_with_source_and_test_file_changed_in_different_commits():
     def _repo(temp_directory):
-        repo = initialize_temp_repo(temp_directory)
+        repo, repo_oldest_commit = initialize_temp_repo(temp_directory)
         source_file = os.path.join(temp_directory, "new-source-file")
         open(source_file, "wb").close()
         repo.index.add([source_file])
@@ -187,7 +187,7 @@ def repo_with_one_source_file_and_one_test_file_changed_in_different_commits():
         open(test_file, "wb").close()
         repo.index.add([test_file])
         repo.index.commit("add test file")
-        return repo
+        return repo, repo_oldest_commit
 
     return _repo
 
@@ -199,14 +199,14 @@ def repo_with_files_added_two_days_ago(monkeypatch):
     monkeypatch.setenv("GIT_COMMITTER_DATE", two_days_ago)
 
     def _repo(temp_directory):
-        repo = initialize_temp_repo(temp_directory)
+        repo, repo_oldest_commit = initialize_temp_repo(temp_directory)
         source_file = os.path.join(temp_directory, "new-source-file")
         test_file = os.path.join(temp_directory, "new-test-file")
         open(source_file, "wb").close()
         open(test_file, "wb").close()
         repo.index.add([source_file, test_file])
         repo.index.commit("add source and test file in same commit 2 days ago")
-        return repo
+        return repo, repo_oldest_commit
 
     return _repo
 

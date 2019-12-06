@@ -4,15 +4,16 @@ import structlog
 from typing import Iterable
 
 from datetime import datetime
-from typing import Any
 from evergreen.api import EvergreenApi
 from pymongo import IndexModel, ASCENDING
 from pymongo.collection import Collection
 from selectedtests.datasource.mongo_wrapper import MongoWrapper
-from selectedtests.test_mappings.create_test_mappings import generate_test_mappings
+from selectedtests.evergreen_helper import get_project_commit_on_date, get_module_commit_on_date
 from selectedtests.task_mappings.create_task_mappings import TaskMappings
-from selectedtests.work_items.project_test_mapping_work_item import ProjectTestMappingWorkItem
+from selectedtests.test_mappings.create_test_mappings import generate_test_mappings
 from selectedtests.work_items.project_task_mapping_work_item import ProjectTaskMappingWorkItem
+from selectedtests.work_items.project_test_mapping_work_item import ProjectTestMappingWorkItem
+from typing import Any
 
 LOGGER = structlog.get_logger()
 
@@ -176,11 +177,11 @@ def _process_one_test_mapping_work_item(
     """
     log = LOGGER.bind(project=work_item.project, module=work_item.module)
     log.info("Starting test mapping work item processing for work_item")
-    if _run_create_test_mappings(evg_api, mongo, work_item, after_date, log):
+    if _run_create_test_mappings_past_six_months(evg_api, mongo, work_item, after_date, log):
         work_item.complete(mongo.test_mappings_queue())
 
 
-def _run_create_test_mappings(
+def _run_create_test_mappings_past_six_months(
     evg_api: EvergreenApi,
     mongo: MongoWrapper,
     work_item: ProjectTestMappingWorkItem,
@@ -195,21 +196,27 @@ def _run_create_test_mappings(
     :param work_item: An instance of ProjectTestMappingWorkItem.
     :param after_date: The date at which to start analyzing commits of the project.
     """
+    after_project_commit = get_project_commit_on_date(evg_api, work_item.project, after_date)
     source_re = re.compile(work_item.source_file_regex)
     test_re = re.compile(work_item.test_file_regex)
+    after_module_commit = None
     module_source_re = None
     module_test_re = None
     if work_item.module:
+        after_module_commit = get_module_commit_on_date(
+            evg_api, work_item.project, after_date, work_item.module
+        )
         module_source_re = re.compile(work_item.module_source_file_regex)
         module_test_re = re.compile(work_item.module_test_file_regex)
 
     test_mappings_result = generate_test_mappings(
         evg_api,
         work_item.project,
+        after_project_commit,
         source_re,
         test_re,
-        after_date,
         module_name=work_item.module,
+        after_module_commit=after_module_commit,
         module_source_re=module_source_re,
         module_test_re=module_test_re,
     )

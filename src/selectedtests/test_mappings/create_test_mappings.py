@@ -1,6 +1,7 @@
 """Test Mappings class to create test mappings."""
 import structlog
 import os.path
+import pdb
 
 from collections import defaultdict, namedtuple
 from typing import Pattern
@@ -9,7 +10,7 @@ from tempfile import TemporaryDirectory
 from evergreen.api import EvergreenApi
 from evergreen.manifest import ManifestModule
 from selectedtests.git_helper import init_repo, modified_files_for_commit
-from selectedtests.evergreen_helper import get_evg_project
+from selectedtests.evergreen_helper import get_evg_project, get_evg_module_for_project
 
 LOGGER = structlog.get_logger(__name__)
 
@@ -131,7 +132,7 @@ def generate_module_test_mappings(
     :param after_commit: The commit at which to start analyzing commits of the module's git repo.
     :return: A list of test mappings for the evergreen module
     """
-    module = _get_module(evg_api, evergreen_project, module_name)
+    module = get_evg_module_for_project(evg_api, evergreen_project, module_name)
     module_repo = init_repo(temp_dir, module.repo, module.branch, module.owner)
     module_test_mappings, module_last_commit_sha_analyzed = TestMappings.create_mappings(
         module_repo,
@@ -142,21 +143,6 @@ def generate_module_test_mappings(
         module.branch,
     )
     return module_test_mappings.get_mappings(), module_last_commit_sha_analyzed
-
-
-def _get_module(evg_api: EvergreenApi, project: str, module_repo: str) -> ManifestModule:
-    """
-    Fetch the module associated with an Evergreen project.
-
-    :param evg_api: An instance of the evg_api client
-    :param project: The name of the evergreen project to analyze.
-    :param module_repo: Name of the module to analyze
-    :return: evg_api client instance of the module
-    """
-    version_iterator = evg_api.versions_by_project(project)
-    recent_version = next(version_iterator)
-    modules = recent_version.get_manifest().modules
-    return modules.get(module_repo)
 
 
 class TestMappings(object):

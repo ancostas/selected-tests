@@ -53,7 +53,9 @@ class TestCli:
 
     @patch(ns("get_evg_api"))
     @patch(ns("generate_test_mappings"))
-    def test_module_after_commit_sha_not_passed_in(self, generate_test_mappings_mock, get_evg_api_mock):
+    def test_module_after_commit_sha_not_passed_in(
+        self, generate_test_mappings_mock, get_evg_api_mock
+    ):
         mock_evg_api = MagicMock()
         get_evg_api_mock.return_value = mock_evg_api
         generate_test_mappings_mock.return_value = "mock-response"

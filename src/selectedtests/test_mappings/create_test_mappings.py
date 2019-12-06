@@ -2,7 +2,7 @@
 import structlog
 import os.path
 
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from typing import Pattern
 from git import Repo
 from tempfile import TemporaryDirectory
@@ -46,25 +46,39 @@ def generate_test_mappings(
         after_module_commit=after_module_commit,
     )
     log.info("Starting to generate test mappings")
+    project_last_commit_sha_analyzed = None
+    module_last_commit_sha_analyzed = None
+    TestMappingsResult = namedtuple(
+        "ProjectMappingsResult",
+        [
+            "test_mappings_list",
+            "project_last_commit_sha_analyzed",
+            "module_last_commit_sha_analyzed",
+        ],
+    )
     with TemporaryDirectory() as temp_dir:
-        test_mappings_list = generate_project_test_mappings(
+        test_mappings_list, project_last_commit_sha_analyzed = generate_project_test_mappings(
             evg_api, evergreen_project, temp_dir, source_re, test_re, after_project_commit
         )
 
         if module_name:
-            test_mappings_list.extend(
-                generate_module_test_mappings(
-                    evg_api,
-                    evergreen_project,
-                    module_name,
-                    temp_dir,
-                    module_source_re,
-                    module_test_re,
-                    after_module_commit,
-                )
+            module_test_mappings_list, module_last_commit_sha_analyzed = generate_module_test_mappings(
+                evg_api,
+                evergreen_project,
+                module_name,
+                temp_dir,
+                module_source_re,
+                module_test_re,
+                after_module_commit,
             )
+            test_mappings_list.extend(module_test_mappings_list)
     log.info("Generated test mappings list", test_mappings_length=len(test_mappings_list))
-    return test_mappings_list
+    test_mappings_result = TestMappingsResult(
+        test_mappings_list=test_mappings_list,
+        project_last_commit_sha_analyzed=project_last_commit_sha_analyzed,
+        module_last_commit_sha_analyzed=module_last_commit_sha_analyzed,
+    )
+    return test_mappings_result
 
 
 def generate_project_test_mappings(
@@ -90,10 +104,10 @@ def generate_project_test_mappings(
     project_repo = init_repo(
         temp_dir, evg_project.repo_name, evg_project.branch_name, evg_project.owner_name
     )
-    project_test_mappings = TestMappings.create_mappings(
+    project_test_mappings, project_last_commit_sha_analyzed = TestMappings.create_mappings(
         project_repo, source_re, test_re, after_commit, evergreen_project, evg_project.branch_name
     )
-    return project_test_mappings.get_mappings()
+    return project_test_mappings.get_mappings(), project_last_commit_sha_analyzed
 
 
 def generate_module_test_mappings(
@@ -119,7 +133,7 @@ def generate_module_test_mappings(
     """
     module = _get_module(evg_api, evergreen_project, module_name)
     module_repo = init_repo(temp_dir, module.repo, module.branch, module.owner)
-    module_test_mappings = TestMappings.create_mappings(
+    module_test_mappings, module_last_commit_sha_analyzed = TestMappings.create_mappings(
         module_repo,
         module_source_re,
         module_test_re,
@@ -127,7 +141,7 @@ def generate_module_test_mappings(
         evergreen_project,
         module.branch,
     )
-    return module_test_mappings.get_mappings()
+    return module_test_mappings.get_mappings(), module_last_commit_sha_analyzed
 
 
 def _get_module(evg_api: EvergreenApi, project: str, module_repo: str) -> ManifestModule:
@@ -195,6 +209,7 @@ class TestMappings(object):
         """
         file_intersection = defaultdict(lambda: defaultdict(int))
         file_count = defaultdict(int)
+        last_commit_sha_analyzed = None
 
         for commit in repo.iter_commits(repo.head.commit):
             LOGGER.debug(
@@ -207,6 +222,7 @@ class TestMappings(object):
             if commit.hexsha == after_commit:
                 break
 
+            last_commit_sha_analyzed = commit.hexsha
             tests_changed = set()
             src_changed = set()
             for path in modified_files_for_commit(commit, LOGGER):
@@ -223,7 +239,10 @@ class TestMappings(object):
                     file_intersection[src][test] += 1
 
         repo_name = os.path.basename(repo.working_dir)
-        return TestMappings(file_intersection, file_count, project, repo_name, branch)
+        return (
+            TestMappings(file_intersection, file_count, project, repo_name, branch),
+            last_commit_sha_analyzed,
+        )
 
     def get_mappings(self):
         """

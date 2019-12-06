@@ -203,7 +203,7 @@ def _run_create_test_mappings(
         module_source_re = re.compile(work_item.module_source_file_regex)
         module_test_re = re.compile(work_item.module_test_file_regex)
 
-    test_mappings_list = generate_test_mappings(
+    test_mappings_result = generate_test_mappings(
         evg_api,
         work_item.project,
         source_re,
@@ -213,10 +213,20 @@ def _run_create_test_mappings(
         module_source_re=module_source_re,
         module_test_re=module_test_re,
     )
-    if test_mappings_list:
-        mongo.test_mappings().insert_many(test_mappings_list)
+    if test_mappings_result.test_mappings_list:
+        mongo.test_mappings().insert_many(test_mappings_result.test_mappings_list)
+        # this can be changed to insert later
         mongo.test_mappings_project_config().update_one(
-            {"project": work_item.project}, {"$set": {"lydia": True}}, True
+            {"project": work_item.project},
+            {
+                "$set": {
+                    "project": work_item.project,
+                    "module": work_item.module,
+                    "project_last_commit_sha_analyzed": test_mappings_result.project_last_commit_sha_analyzed,
+                    "module_last_commit_sha_analyzed": test_mappings_result.module_last_commit_sha_analyzed,
+                }
+            },
+            True,
         )
     else:
         log.info("No test mappings generated")

@@ -22,7 +22,9 @@ def ns(relative_name):
 class TestCreateMappings:
     def test_no_source_files_changed(self, repo_with_no_source_files_changed):
         with TemporaryDirectory() as tmpdir:
-            repo, repo_oldest_commit = repo_with_no_source_files_changed(tmpdir)
+            repo = repo_with_no_source_files_changed(tmpdir)
+            commits = list(repo.iter_commits("master"))
+            repo_oldest_commit = commits[-1]
             test_mappings, last_commit_sha_analyzed = under_test.TestMappings.create_mappings(
                 repo, SOURCE_RE, TEST_RE, repo_oldest_commit.hexsha, PROJECT, BRANCH
             )
@@ -33,7 +35,9 @@ class TestCreateMappings:
         self, repo_with_one_source_file_and_no_test_files_changed
     ):
         with TemporaryDirectory() as tmpdir:
-            repo, repo_oldest_commit = repo_with_one_source_file_and_no_test_files_changed(tmpdir)
+            repo = repo_with_one_source_file_and_no_test_files_changed(tmpdir)
+            commits = list(repo.iter_commits("master"))
+            repo_oldest_commit = commits[-1]
             test_mappings, last_commit_sha_analyzed = under_test.TestMappings.create_mappings(
                 repo, SOURCE_RE, TEST_RE, repo_oldest_commit.hexsha, PROJECT, BRANCH
             )
@@ -44,7 +48,9 @@ class TestCreateMappings:
         self, repo_with_no_source_files_and_one_test_file_changed
     ):
         with TemporaryDirectory() as tmpdir:
-            repo, repo_oldest_commit = repo_with_no_source_files_and_one_test_file_changed(tmpdir)
+            repo = repo_with_no_source_files_and_one_test_file_changed(tmpdir)
+            commits = list(repo.iter_commits("master"))
+            repo_oldest_commit = commits[-1]
             test_mappings, last_commit_sha_analyzed = under_test.TestMappings.create_mappings(
                 repo, SOURCE_RE, TEST_RE, repo_oldest_commit.hexsha, PROJECT, BRANCH
             )
@@ -55,7 +61,9 @@ class TestCreateMappings:
         self, repo_with_source_and_test_file_changed_in_same_commit
     ):
         with TemporaryDirectory() as tmpdir:
-            repo, repo_oldest_commit = repo_with_source_and_test_file_changed_in_same_commit(tmpdir)
+            repo = repo_with_source_and_test_file_changed_in_same_commit(tmpdir)
+            commits = list(repo.iter_commits("master"))
+            repo_oldest_commit = commits[-1]
             test_mappings, last_commit_sha_analyzed = under_test.TestMappings.create_mappings(
                 repo, SOURCE_RE, TEST_RE, repo_oldest_commit.hexsha, PROJECT, BRANCH
             )
@@ -75,9 +83,9 @@ class TestCreateMappings:
         self, repo_with_source_and_test_file_changed_in_different_commits
     ):
         with TemporaryDirectory() as tmpdir:
-            repo, repo_oldest_commit = repo_with_source_and_test_file_changed_in_different_commits(
-                tmpdir
-            )
+            repo = repo_with_source_and_test_file_changed_in_different_commits(tmpdir)
+            commits = list(repo.iter_commits("master"))
+            repo_oldest_commit = commits[-1]
             test_mappings, last_commit_sha_analyzed = under_test.TestMappings.create_mappings(
                 repo, SOURCE_RE, TEST_RE, repo_oldest_commit.hexsha, PROJECT, BRANCH
             )
@@ -86,7 +94,9 @@ class TestCreateMappings:
 
     def test_commit_range_includes_time_of_file_changes(self, repo_with_files_added_two_days_ago):
         with TemporaryDirectory() as tmpdir:
-            repo, repo_oldest_commit = repo_with_files_added_two_days_ago(tmpdir)
+            repo = repo_with_files_added_two_days_ago(tmpdir)
+            commits = list(repo.iter_commits("master"))
+            repo_oldest_commit = commits[-1]
             test_mappings, last_commit_sha_analyzed = under_test.TestMappings.create_mappings(
                 repo, SOURCE_RE, TEST_RE, repo_oldest_commit.hexsha, PROJECT, BRANCH
             )
@@ -100,7 +110,7 @@ class TestCreateMappings:
 
     def test_commit_range_excludes_time_of_file_changes(self, repo_with_files_added_two_days_ago):
         with TemporaryDirectory() as tmpdir:
-            repo, repo_oldest_commit = repo_with_files_added_two_days_ago(tmpdir)
+            repo = repo_with_files_added_two_days_ago(tmpdir)
             repo_most_recent_commit = repo.head.commit
             test_mappings, last_commit_sha_analyzed = under_test.TestMappings.create_mappings(
                 repo, SOURCE_RE, TEST_RE, repo_most_recent_commit.hexsha, PROJECT, BRANCH
@@ -125,9 +135,10 @@ class TestGenerateProjectTestMappings:
         mock_evg_api.versions_by_project.return_value = evg_versions
 
         with TemporaryDirectory() as tmpdir:
-            init_repo_mock.return_value, repo_oldest_commit = repo_with_source_and_test_file_changed_in_same_commit(
-                tmpdir
-            )
+            repo = repo_with_source_and_test_file_changed_in_same_commit(tmpdir)
+            init_repo_mock.return_value = repo
+            commits = list(repo.iter_commits("master"))
+            repo_oldest_commit = commits[-1]
             mappings, last_commit_sha_analyzed = under_test.generate_project_test_mappings(
                 mock_evg_api, "mongodb-mongo-master", tmpdir, SOURCE_RE, TEST_RE, repo_oldest_commit
             )
@@ -160,10 +171,10 @@ class TestGenerateModuleTestMappings:
         mock_evg_api.versions_by_project.return_value = evg_versions_with_manifest
 
         with TemporaryDirectory() as tmpdir:
-            repo, repo_oldest_commit = repo_with_source_and_test_file_changed_in_same_commit(
-                tmpdir
-            )
+            repo = repo_with_source_and_test_file_changed_in_same_commit(tmpdir)
             init_repo_mock.return_value = repo
+            commits = list(repo.iter_commits("master"))
+            repo_oldest_commit = commits[-1]
             mappings, last_commit_sha_analyzed = under_test.generate_module_test_mappings(
                 mock_evg_api,
                 "mongodb-mongo-master",

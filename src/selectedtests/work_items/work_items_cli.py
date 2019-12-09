@@ -3,8 +3,10 @@ import click
 import pytz
 
 from datetime import datetime, timedelta
-from selectedtests.work_items.process_work_items import (
+from selectedtests.work_items.process_test_mapping_work_items import (
     process_queued_test_mapping_work_items,
+)
+from selectedtests.work_items.process_task_mapping_work_items import (
     process_queued_task_mapping_work_items,
 )
 from selectedtests.datasource.mongo_wrapper import MongoWrapper

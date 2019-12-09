@@ -69,6 +69,10 @@ def get_module_commit_on_date(evg_api, evergreen_project, after_date, module_nam
 
 
 def get_version_on_date(evg_api, evergreen_project, after_date):
-    windowed_versions = evg_api.versions_by_project_time_window(evergreen_project, datetime.utcnow(), after_date)
-    windowed_list = list(windowed_versions)
-    return windowed_list[-1]
+    project_versions = evg_api.versions_by_project_time_window(
+        evergreen_project, datetime.utcnow(), after_date
+    )
+    after_version = None
+    for version in project_versions:
+        after_version = version.version_id
+    return after_version

@@ -1,4 +1,5 @@
 from unittest.mock import MagicMock, patch
+import pdb
 from datetime import datetime, date, time
 import re
 from copy import deepcopy
@@ -31,15 +32,19 @@ class TestFullRunThrough:
 
         filtered_files_mock.return_value = ["src/file1", "src/file2"]
 
-        output = under_test.TaskMappings.create_task_mappings(
-            mock_evg_api,
-            project_name,
-            "some-evergreen-version",
-            re.compile("src.*"),
+        output, last_version_analyzed = under_test.TaskMappings.create_task_mappings(
+            mock_evg_api, project_name, "some-evergreen-version", re.compile("src.*")
         )
 
         transformed_out = output.transform()
         assert expected_task_mappings_output == transformed_out
+
+        # last_version_analyzed should be equal to the current_version
+        # version_id since current_version is most recent (in terms of version
+        # date) of the versions analyzed
+        assert (
+            last_version_analyzed == "mongodb_mongo_master_cf4c944977a348494d81eeaf7eddb96ef0457876"
+        )
 
 
 class TestCreateTaskMappings:
@@ -60,7 +65,11 @@ class TestCreateTaskMappings:
     ):
         evg_api_mock = MagicMock()
         evg_api_mock.versions_by_project.return_value = [
-            MagicMock(create_time=datetime.combine(date(1, 1, 1), time(1, 2, i))) for i in range(3)
+            MagicMock(
+                version_id=f"version-{i}",
+                create_time=datetime.combine(date(1, 1, 1), time(1, 2, i)),
+            )
+            for i in range(3)
         ]
         evg_api_mock.versions_by_project.return_value.reverse()
         associated_module_mock.return_value = None
@@ -75,7 +84,7 @@ class TestCreateTaskMappings:
         flipped_mock.return_value = {"variant1": ["task1", "task2"], "variant2": ["task3", "task4"]}
         project_name = "project"
 
-        mappings = under_test.TaskMappings.create_task_mappings(
+        mappings, last_version_analyzed = under_test.TaskMappings.create_task_mappings(
             evg_api_mock,
             project_name,
             "some-evergreen-version",
@@ -95,6 +104,11 @@ class TestCreateTaskMappings:
                 assert variant_output is not None
                 for task in expected_tasks:
                     assert task in variant_output
+
+        #  versions_by_project returns ['version-2', 'version-1', 'version-0'],
+        #  so version-1 is the only one analyzed and thus the
+        #  last_version_analyzed
+        assert last_version_analyzed == "version-1"
 
     @patch(ns("_get_evg_project_and_init_repo"))
     @patch(ns("_get_diff"))
@@ -129,7 +143,7 @@ class TestCreateTaskMappings:
         flipped_mock.return_value = {"variant1": ["task1", "task2"], "variant2": ["task3", "task4"]}
         project_name = "project"
 
-        mappings = under_test.TaskMappings.create_task_mappings(
+        mappings, last_version_analyzed = under_test.TaskMappings.create_task_mappings(
             evg_api_mock,
             project_name,
             "some-evergreen-version",
@@ -172,7 +186,7 @@ class TestCreateTaskMappings:
         flipped_mock.return_value = {}
         project_name = "project"
 
-        mappings = under_test.TaskMappings.create_task_mappings(
+        mappings, last_version_analyzed = under_test.TaskMappings.create_task_mappings(
             evg_api_mock,
             project_name,
             "some-evergreen-version",

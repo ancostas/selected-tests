@@ -102,7 +102,7 @@ def create(
 
     LOGGER.info(f"Creating task mappings for {evergreen_project}")
 
-    mappings = TaskMappings.create_task_mappings(
+    mappings, last_version_analyzed = TaskMappings.create_task_mappings(
         evg_api,
         evergreen_project,
         after_version,

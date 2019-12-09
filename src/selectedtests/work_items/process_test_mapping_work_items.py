@@ -6,11 +6,12 @@ from typing import Iterable
 from datetime import datetime
 from evergreen.api import EvergreenApi
 from pymongo.collection import Collection
+from typing import Any
+
 from selectedtests.datasource.mongo_wrapper import MongoWrapper
 from selectedtests.evergreen_helper import get_module_commit_on_date, get_commit_on_date
 from selectedtests.test_mappings.create_test_mappings import generate_test_mappings
 from selectedtests.work_items.project_test_mapping_work_item import ProjectTestMappingWorkItem
-from typing import Any
 
 LOGGER = structlog.get_logger()
 

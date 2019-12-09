@@ -69,9 +69,9 @@ class TestProcessOneTestMappingWorkItem:
 
 class TestRunCreateTestMappings:
     @patch(ns("generate_test_mappings"))
-    @patch(ns("get_commit_on_date"))
-    def test_mappings_are_created(self, get_commit_on_date_mock, generate_test_mappings_mock):
-        get_commit_on_date_mock.return_value = "commit-sha-six-months-ago"
+    @patch(ns("get_project_commit_on_date"))
+    def test_mappings_are_created(self, get_project_commit_on_date_mock, generate_test_mappings_mock):
+        get_project_commit_on_date_mock.return_value = "commit-sha-six-months-ago"
         evg_api_mock = MagicMock()
         mongo_mock = MagicMock()
         logger_mock = MagicMock()
@@ -89,9 +89,9 @@ class TestRunCreateTestMappings:
         mongo_mock.test_mappings.return_value.insert_many.assert_called_once_with(["mock-mapping"])
 
     @patch(ns("generate_test_mappings"))
-    @patch(ns("get_commit_on_date"))
-    def test_no_mappings_are_created(self, get_commit_on_date_mock, generate_test_mappings_mock):
-        get_commit_on_date_mock.return_value = "commit-sha-six-months-ago"
+    @patch(ns("get_project_commit_on_date"))
+    def test_no_mappings_are_created(self, get_project_commit_on_date_mock, generate_test_mappings_mock):
+        get_project_commit_on_date_mock.return_value = "commit-sha-six-months-ago"
         evg_api_mock = MagicMock()
         mongo_mock = MagicMock()
         logger_mock = MagicMock()

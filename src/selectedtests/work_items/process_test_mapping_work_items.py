@@ -9,7 +9,7 @@ from pymongo.collection import Collection
 from typing import Any
 
 from selectedtests.datasource.mongo_wrapper import MongoWrapper
-from selectedtests.evergreen_helper import get_module_commit_on_date, get_commit_on_date
+from selectedtests.evergreen_helper import get_module_commit_on_date, get_project_commit_on_date
 from selectedtests.test_mappings.create_test_mappings import generate_test_mappings
 from selectedtests.work_items.project_test_mapping_work_item import ProjectTestMappingWorkItem
 
@@ -95,7 +95,7 @@ def _run_create_test_mappings(
     :param work_item: An instance of ProjectTestMappingWorkItem.
     :param after_date: The date at which to start analyzing commits of the project.
     """
-    after_project_commit = get_commit_on_date(evg_api, work_item.project, after_date)
+    after_project_commit = get_project_commit_on_date(evg_api, work_item.project, after_date)
     source_re = re.compile(work_item.source_file_regex)
     test_re = re.compile(work_item.test_file_regex)
     after_module_commit = None

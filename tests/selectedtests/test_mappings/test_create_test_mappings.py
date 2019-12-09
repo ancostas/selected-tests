@@ -25,7 +25,7 @@ class TestCreateMappings:
             repo = repo_with_no_source_files_changed(tmpdir)
             commits = list(repo.iter_commits("master"))
             repo_oldest_commit = commits[-1]
-            test_mappings, last_commit_sha_analyzed = under_test.TestMappings.create_mappings(
+            test_mappings = under_test.TestMappings.create_mappings(
                 repo, SOURCE_RE, TEST_RE, repo_oldest_commit.hexsha, PROJECT, BRANCH
             )
             test_mappings_list = test_mappings.get_mappings()
@@ -38,7 +38,7 @@ class TestCreateMappings:
             repo = repo_with_one_source_file_and_no_test_files_changed(tmpdir)
             commits = list(repo.iter_commits("master"))
             repo_oldest_commit = commits[-1]
-            test_mappings, last_commit_sha_analyzed = under_test.TestMappings.create_mappings(
+            test_mappings = under_test.TestMappings.create_mappings(
                 repo, SOURCE_RE, TEST_RE, repo_oldest_commit.hexsha, PROJECT, BRANCH
             )
             test_mappings_list = test_mappings.get_mappings()
@@ -51,7 +51,7 @@ class TestCreateMappings:
             repo = repo_with_no_source_files_and_one_test_file_changed(tmpdir)
             commits = list(repo.iter_commits("master"))
             repo_oldest_commit = commits[-1]
-            test_mappings, last_commit_sha_analyzed = under_test.TestMappings.create_mappings(
+            test_mappings = under_test.TestMappings.create_mappings(
                 repo, SOURCE_RE, TEST_RE, repo_oldest_commit.hexsha, PROJECT, BRANCH
             )
             test_mappings_list = test_mappings.get_mappings()
@@ -64,7 +64,7 @@ class TestCreateMappings:
             repo = repo_with_source_and_test_file_changed_in_same_commit(tmpdir)
             commits = list(repo.iter_commits("master"))
             repo_oldest_commit = commits[-1]
-            test_mappings, last_commit_sha_analyzed = under_test.TestMappings.create_mappings(
+            test_mappings = under_test.TestMappings.create_mappings(
                 repo, SOURCE_RE, TEST_RE, repo_oldest_commit.hexsha, PROJECT, BRANCH
             )
             test_mappings_list = test_mappings.get_mappings()
@@ -86,7 +86,7 @@ class TestCreateMappings:
             repo = repo_with_source_and_test_file_changed_in_different_commits(tmpdir)
             commits = list(repo.iter_commits("master"))
             repo_oldest_commit = commits[-1]
-            test_mappings, last_commit_sha_analyzed = under_test.TestMappings.create_mappings(
+            test_mappings = under_test.TestMappings.create_mappings(
                 repo, SOURCE_RE, TEST_RE, repo_oldest_commit.hexsha, PROJECT, BRANCH
             )
             test_mappings_list = test_mappings.get_mappings()
@@ -97,7 +97,7 @@ class TestCreateMappings:
             repo = repo_with_files_added_two_days_ago(tmpdir)
             commits = list(repo.iter_commits("master"))
             repo_oldest_commit = commits[-1]
-            test_mappings, last_commit_sha_analyzed = under_test.TestMappings.create_mappings(
+            test_mappings = under_test.TestMappings.create_mappings(
                 repo, SOURCE_RE, TEST_RE, repo_oldest_commit.hexsha, PROJECT, BRANCH
             )
             test_mappings_list = test_mappings.get_mappings()
@@ -112,7 +112,7 @@ class TestCreateMappings:
         with TemporaryDirectory() as tmpdir:
             repo = repo_with_files_added_two_days_ago(tmpdir)
             repo_most_recent_commit = repo.head.commit
-            test_mappings, last_commit_sha_analyzed = under_test.TestMappings.create_mappings(
+            test_mappings = under_test.TestMappings.create_mappings(
                 repo, SOURCE_RE, TEST_RE, repo_most_recent_commit.hexsha, PROJECT, BRANCH
             )
             test_mappings_list = test_mappings.get_mappings()
@@ -138,12 +138,18 @@ class TestGenerateProjectTestMappings:
             repo = repo_with_source_and_test_file_changed_in_same_commit(tmpdir)
             init_repo_mock.return_value = repo
             commits = list(repo.iter_commits("master"))
+            repo_newest_commit = commits[0]
             repo_oldest_commit = commits[-1]
             mappings, last_commit_sha_analyzed = under_test.generate_project_test_mappings(
-                mock_evg_api, "mongodb-mongo-master", tmpdir, SOURCE_RE, TEST_RE, repo_oldest_commit
+                mock_evg_api,
+                "mongodb-mongo-master",
+                tmpdir,
+                SOURCE_RE,
+                TEST_RE,
+                repo_oldest_commit.hexsha,
             )
 
-        assert last_commit_sha_analyzed == repo_oldest_commit.hexsha
+        assert last_commit_sha_analyzed == repo_newest_commit.hexsha
 
         assert len(mappings) == 1
         test_mapping = mappings[0]
@@ -174,6 +180,7 @@ class TestGenerateModuleTestMappings:
             repo = repo_with_source_and_test_file_changed_in_same_commit(tmpdir)
             init_repo_mock.return_value = repo
             commits = list(repo.iter_commits("master"))
+            repo_newest_commit = commits[0]
             repo_oldest_commit = commits[-1]
             mappings, last_commit_sha_analyzed = under_test.generate_module_test_mappings(
                 mock_evg_api,
@@ -185,7 +192,7 @@ class TestGenerateModuleTestMappings:
                 repo_oldest_commit,
             )
 
-        assert last_commit_sha_analyzed == repo_oldest_commit.hexsha
+        assert last_commit_sha_analyzed == repo_newest_commit.hexsha
 
         assert len(mappings) == 1
         test_mapping = mappings[0]

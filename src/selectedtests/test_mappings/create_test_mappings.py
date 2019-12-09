@@ -31,11 +31,11 @@ def generate_test_mappings(
 
     :param evg_api: An instance of the evg_api client
     :param evergreen_project: The name of the evergreen project to analyze.
-    :param after_project_commit: The commit at which to start analyzing commits of the project.
+    :param after_project_commit: The commit sha at which to start analyzing commits of the project.
     :param source_re: Regex pattern to match changed source files against.
     :param test_re: Regex pattern to match changed test files against.
     :param module_name: The name of the module to analyze.
-    :param after_module_commit: The commit at which to start analyzing commits of the module.
+    :param after_module_commit: The commit sha at which to start analyzing commits of the module.
     :param module_source_re: Regex pattern to match changed module source files against.
     :param module_test_re: Regex pattern to match changed module test files against.
     :return: A list of test mappings for the evergreen project and (optionally) its module
@@ -98,14 +98,15 @@ def generate_project_test_mappings(
     :param temp_dir: The place where to clone the repo to.
     :param source_re: Regex pattern to match changed source files against.
     :param test_re: Regex pattern to match changed test files against.
-    :param after_commit: The commit at which to start analyzing commits of the project's git repo.
+    :param after_commit: The commit sha at which to start analyzing commits of the project's git repo.
     :return: A list of test mappings for the evergreen project
     """
     evg_project = get_evg_project(evg_api, evergreen_project)
     project_repo = init_repo(
         temp_dir, evg_project.repo_name, evg_project.branch_name, evg_project.owner_name
     )
-    project_test_mappings, project_last_commit_sha_analyzed = TestMappings.create_mappings(
+    project_last_commit_sha_analyzed = project_repo.head.commit.hexsha
+    project_test_mappings = TestMappings.create_mappings(
         project_repo, source_re, test_re, after_commit, evergreen_project, evg_project.branch_name
     )
     return project_test_mappings.get_mappings(), project_last_commit_sha_analyzed
@@ -129,12 +130,13 @@ def generate_module_test_mappings(
     :param temp_dir: The place where to clone the repo to.
     :param module_source_re: Regex pattern to match changed module source files against.
     :param module_test_re: Regex pattern to match changed module test files against.
-    :param after_commit: The commit at which to start analyzing commits of the module's git repo.
+    :param after_commit: The commit sha at which to start analyzing commits of the module's git repo.
     :return: A list of test mappings for the evergreen module
     """
     module = get_evg_module_for_project(evg_api, evergreen_project, module_name)
     module_repo = init_repo(temp_dir, module.repo, module.branch, module.owner)
-    module_test_mappings, module_last_commit_sha_analyzed = TestMappings.create_mappings(
+    module_last_commit_sha_analyzed = module_repo.head.commit.hexsha
+    module_test_mappings = TestMappings.create_mappings(
         module_repo,
         module_source_re,
         module_test_re,
@@ -188,14 +190,13 @@ class TestMappings(object):
         :param repo: The repo that contains the source code for the evergreen project.
         :param source_re: Regex pattern to match changed source files against.
         :param test_re: Regex pattern to match changed test files against.
-        :param after_commit: The commit at which to start analyzing commits of the repo.
+        :param after_commit: The commit sha at which to start analyzing commits of the repo.
         :param project: The name of the evergreen project to analyze.
         :param branch: The branch of the git repo used for the evergreen project.
         :return: An instance of the test mappings class
         """
         file_intersection = defaultdict(lambda: defaultdict(int))
         file_count = defaultdict(int)
-        last_commit_sha_analyzed = None
 
         for commit in repo.iter_commits(repo.head.commit):
             LOGGER.debug(
@@ -208,7 +209,6 @@ class TestMappings(object):
             if commit.hexsha == after_commit:
                 break
 
-            last_commit_sha_analyzed = commit.hexsha
             tests_changed = set()
             src_changed = set()
             for path in modified_files_for_commit(commit, LOGGER):
@@ -225,10 +225,7 @@ class TestMappings(object):
                     file_intersection[src][test] += 1
 
         repo_name = os.path.basename(repo.working_dir)
-        return (
-            TestMappings(file_intersection, file_count, project, repo_name, branch),
-            last_commit_sha_analyzed,
-        )
+        return TestMappings(file_intersection, file_count, project, repo_name, branch)
 
     def get_mappings(self):
         """

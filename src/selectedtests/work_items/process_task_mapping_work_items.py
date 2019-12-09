@@ -87,7 +87,7 @@ def _run_create_task_mappings(
     if work_item.module:
         module_source_re = re.compile(work_item.module_source_file_regex)
 
-    mappings, last_version_analyzed = TaskMappings.create_task_mappings(
+    mappings, most_recent_version_analyzed = TaskMappings.create_task_mappings(
         evg_api,
         work_item.project,
         after_version,
@@ -105,8 +105,7 @@ def _run_create_task_mappings(
             {
                 "$set": {
                     "project": work_item.project,
-                    "module": work_item.module,
-                    "last_version_analyzed": last_version_analyzed,
+                    "most_recent_version_analyzed": most_recent_version_analyzed,
                 }
             },
             True,

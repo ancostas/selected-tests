@@ -13,7 +13,11 @@ from selectedtests.evergreen_helper import get_evg_project, get_evg_module_for_p
 LOGGER = structlog.get_logger(__name__)
 TestMappingsResult = namedtuple(
     "ProjectMappingsResult",
-    ["test_mappings_list", "project_last_commit_sha_analyzed", "module_last_commit_sha_analyzed"],
+    [
+        "test_mappings_list",
+        "most_recent_project_commit_analyzed",
+        "most_recent_module_commit_analyzed",
+    ],
 )
 
 
@@ -49,15 +53,15 @@ def generate_test_mappings(
         after_module_commit=after_module_commit,
     )
     log.info("Starting to generate test mappings")
-    project_last_commit_sha_analyzed = None
-    module_last_commit_sha_analyzed = None
+    most_recent_project_commit_analyzed = None
+    most_recent_module_commit_analyzed = None
     with TemporaryDirectory() as temp_dir:
-        test_mappings_list, project_last_commit_sha_analyzed = generate_project_test_mappings(
+        test_mappings_list, most_recent_project_commit_analyzed = generate_project_test_mappings(
             evg_api, evergreen_project, temp_dir, source_re, test_re, after_project_commit
         )
 
         if module_name:
-            module_test_mappings_list, module_last_commit_sha_analyzed = generate_module_test_mappings(
+            module_test_mappings_list, most_recent_module_commit_analyzed = generate_module_test_mappings(
                 evg_api,
                 evergreen_project,
                 module_name,
@@ -70,8 +74,8 @@ def generate_test_mappings(
     log.info("Generated test mappings list", test_mappings_length=len(test_mappings_list))
     test_mappings_result = TestMappingsResult(
         test_mappings_list=test_mappings_list,
-        project_last_commit_sha_analyzed=project_last_commit_sha_analyzed,
-        module_last_commit_sha_analyzed=module_last_commit_sha_analyzed,
+        most_recent_project_commit_analyzed=most_recent_project_commit_analyzed,
+        most_recent_module_commit_analyzed=most_recent_module_commit_analyzed,
     )
     return test_mappings_result
 
@@ -99,11 +103,15 @@ def generate_project_test_mappings(
     project_repo = init_repo(
         temp_dir, evg_project.repo_name, evg_project.branch_name, evg_project.owner_name
     )
-    project_last_commit_sha_analyzed = project_repo.head.commit.hexsha
+    most_recent_project_commit_analyzed = project_repo.head.commit.hexsha
+    LOGGER.info(
+        "Calculated most_recent_project_commit_analyzed",
+        most_recent_project_commit_analyzed=most_recent_project_commit_analyzed,
+    )
     project_test_mappings = TestMappings.create_mappings(
         project_repo, source_re, test_re, after_commit, evergreen_project, evg_project.branch_name
     )
-    return project_test_mappings.get_mappings(), project_last_commit_sha_analyzed
+    return project_test_mappings.get_mappings(), most_recent_project_commit_analyzed
 
 
 def generate_module_test_mappings(
@@ -129,7 +137,11 @@ def generate_module_test_mappings(
     """
     module = get_evg_module_for_project(evg_api, evergreen_project, module_name)
     module_repo = init_repo(temp_dir, module.repo, module.branch, module.owner)
-    module_last_commit_sha_analyzed = module_repo.head.commit.hexsha
+    most_recent_module_commit_analyzed = module_repo.head.commit.hexsha
+    LOGGER.info(
+        "Calculated most_recent_module_commit_analyzed",
+        most_recent_module_commit_analyzed=most_recent_module_commit_analyzed,
+    )
     module_test_mappings = TestMappings.create_mappings(
         module_repo,
         module_source_re,
@@ -138,7 +150,7 @@ def generate_module_test_mappings(
         evergreen_project,
         module.branch,
     )
-    return module_test_mappings.get_mappings(), module_last_commit_sha_analyzed
+    return module_test_mappings.get_mappings(), most_recent_module_commit_analyzed
 
 
 class TestMappings(object):
@@ -193,15 +205,15 @@ class TestMappings(object):
         file_count = defaultdict(int)
 
         for commit in repo.iter_commits(repo.head.commit):
+            if commit.hexsha == after_commit:
+                break
+
             LOGGER.debug(
                 "Investigating commit",
                 summary=commit.message.splitlines()[0],
                 ts=commit.committed_datetime,
                 id=commit.hexsha,
             )
-
-            if commit.hexsha == after_commit:
-                break
 
             tests_changed = set()
             src_changed = set()

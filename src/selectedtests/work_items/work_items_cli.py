@@ -5,6 +5,7 @@ import pytz
 from datetime import datetime, timedelta
 from selectedtests.work_items.process_test_mapping_work_items import (
     process_queued_test_mapping_work_items,
+    update_test_mappings_since_last_commit,
 )
 from selectedtests.work_items.process_task_mapping_work_items import (
     process_queued_task_mapping_work_items,
@@ -116,6 +117,16 @@ def process_task_mappings(ctx, weeks_back):
     # offset-aware.
     after_date = datetime.utcnow() - timedelta(weeks=weeks_back)
     process_queued_task_mapping_work_items(ctx.obj["evg_api"], ctx.obj["mongo"], after_date)
+
+
+@cli.command()
+@click.option(
+    "--weeks-back", type=int, default=DEFAULT_WEEKS_BACK, help="Number of weeks back to process."
+)
+@click.pass_context
+def update_test_mappings(ctx, weeks_back):
+    """Process test mappings since they were last processed."""
+    update_test_mappings_since_last_commit(ctx.obj["evg_api"], ctx.obj["mongo"])
 
 
 def main():

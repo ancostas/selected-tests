@@ -66,7 +66,7 @@ class TaskMappings:
         module_repo: Repo = None
         branch = None
         repo_name = None
-        last_version_analyzed = None
+        most_recent_version_analyzed = None
 
         with TemporaryDirectory() as temp_dir:
             try:
@@ -78,8 +78,8 @@ class TaskMappings:
             jobs = []
             with Executor(max_workers=MAX_WORKERS) as exe:
                 for next_version, version, prev_version in windowed_iter(project_versions, 3):
-                    if not last_version_analyzed:
-                        last_version_analyzed = version.version_id
+                    if not most_recent_version_analyzed:
+                        most_recent_version_analyzed = version.version_id
 
                     if version.version_id == after_version:
                         break
@@ -129,7 +129,7 @@ class TaskMappings:
 
         return (
             TaskMappings(task_mappings, evergreen_project, repo_name, branch),
-            last_version_analyzed,
+            most_recent_version_analyzed,
         )
 
     def transform(self) -> List[Dict]:

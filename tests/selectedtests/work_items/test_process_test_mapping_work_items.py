@@ -70,15 +70,17 @@ class TestProcessOneTestMappingWorkItem:
 class TestRunCreateTestMappings:
     @patch(ns("generate_test_mappings"))
     @patch(ns("get_project_commit_on_date"))
-    def test_mappings_are_created(self, get_project_commit_on_date_mock, generate_test_mappings_mock):
+    def test_mappings_are_created(
+        self, get_project_commit_on_date_mock, generate_test_mappings_mock
+    ):
         get_project_commit_on_date_mock.return_value = "commit-sha-six-months-ago"
         evg_api_mock = MagicMock()
         mongo_mock = MagicMock()
         logger_mock = MagicMock()
         generate_test_mappings_mock.return_value = TestMappingsResult(
             test_mappings_list=["mock-mapping"],
-            project_last_commit_sha_analyzed="last-project-sha-analyzed",
-            module_last_commit_sha_analyzed="last-module-sha-analyzed",
+            most_recent_project_commit_analyzed="last-project-sha-analyzed",
+            most_recent_module_commit_analyzed="last-module-sha-analyzed",
         )
         work_item_mock = MagicMock(source_file_regex="src", test_file_regex="test", module=None)
 
@@ -90,15 +92,17 @@ class TestRunCreateTestMappings:
 
     @patch(ns("generate_test_mappings"))
     @patch(ns("get_project_commit_on_date"))
-    def test_no_mappings_are_created(self, get_project_commit_on_date_mock, generate_test_mappings_mock):
+    def test_no_mappings_are_created(
+        self, get_project_commit_on_date_mock, generate_test_mappings_mock
+    ):
         get_project_commit_on_date_mock.return_value = "commit-sha-six-months-ago"
         evg_api_mock = MagicMock()
         mongo_mock = MagicMock()
         logger_mock = MagicMock()
         generate_test_mappings_mock.return_value = TestMappingsResult(
             test_mappings_list=[],
-            project_last_commit_sha_analyzed=None,
-            module_last_commit_sha_analyzed=None,
+            most_recent_project_commit_analyzed=None,
+            most_recent_module_commit_analyzed=None,
         )
         mongo_mock.test_mappings.return_value.insert_many.side_effect = TypeError(
             "documents must be a non-empty list"

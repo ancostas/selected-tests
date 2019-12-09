@@ -121,21 +121,66 @@ def _run_create_test_mappings(
     )
     if test_mappings_result.test_mappings_list:
         mongo.test_mappings().insert_many(test_mappings_result.test_mappings_list)
-        # this can be changed to insert later
-        mongo.test_mappings_project_config().update_one(
-            {"project": work_item.project},
+        mongo.test_mappings_project_config().insert_one(
             {
-                "$set": {
-                    "project": work_item.project,
-                    "module": work_item.module,
-                    "project_last_commit_sha_analyzed": test_mappings_result.project_last_commit_sha_analyzed,
-                    "module_last_commit_sha_analyzed": test_mappings_result.module_last_commit_sha_analyzed,
-                }
-            },
-            True,
+                "project": work_item.project,
+                "most_recent_project_commit_analyzed": test_mappings_result.most_recent_project_commit_analyzed,
+                "source_re": work_item.source_file_regex,
+                "test_re": work_item.test_file_regex,
+                "module": work_item.module,
+                "most_recent_module_commit_analyzed": test_mappings_result.most_recent_module_commit_analyzed,
+                "module_source_re": work_item.module_source_file_regex,
+                "module_test_re": work_item.module_test_file_regex,
+            }
         )
     else:
         log.info("No test mappings generated")
     log.info("Finished test mapping work item processing")
 
     return True
+
+
+def update_test_mappings_since_last_commit(evg_api: EvergreenApi, mongo: MongoWrapper):
+    """
+    Update test mappings that are already being tracked.
+
+    :param evg_api: An instance of the evg_api client
+    :param mongo: An instance of MongoWrapper.
+    """
+    LOGGER.info("Updating test mappings")
+    project_cursor = mongo.test_mappings_project_config().find({})
+    for project_config in project_cursor:
+        LOGGER.info("Updating test mappings for project", project_config=project_config)
+        source_re = re.compile(project_config["source_re"])
+        test_re = re.compile(project_config["test_re"])
+        module_source_re = None
+        module_test_re = None
+        if project_config["module"]:
+            module_source_re = re.compile(project_config["module_source_re"])
+            module_test_re = re.compile(project_config["module_test_re"])
+
+        test_mappings_result = generate_test_mappings(
+            evg_api,
+            project_config["project"],
+            project_config["most_recent_project_commit_analyzed"],
+            source_re,
+            test_re,
+            module_name=project_config["module"],
+            after_module_commit=project_config["most_recent_module_commit_analyzed"],
+            module_source_re=module_source_re,
+            module_test_re=module_test_re,
+        )
+        if test_mappings_result.test_mappings_list:
+            mongo.test_mappings().insert_many(test_mappings_result.test_mappings_list)
+            mongo.test_mappings_project_config().update_one(
+                {"project": project_config["project"]},
+                {
+                    "$set": {
+                        "most_recent_project_commit_analyzed": test_mappings_result.most_recent_project_commit_analyzed,
+                        "most_recent_module_commit_analyzed": test_mappings_result.most_recent_module_commit_analyzed,
+                    }
+                },
+            )
+        else:
+            LOGGER.info("No test mappings generated")
+    LOGGER.info("Finished test mapping updating")

@@ -237,8 +237,10 @@ class TestGenerateTestMappings:
             "mock-project-mappings",
             "mock-module-mappings",
         ]
-        assert test_mappings_result.project_last_commit_sha_analyzed == "last-project-sha-analyzed"
-        assert test_mappings_result.module_last_commit_sha_analyzed == "last-module-sha-analyzed"
+        assert (
+            test_mappings_result.most_recent_project_commit_analyzed == "last-project-sha-analyzed"
+        )
+        assert test_mappings_result.most_recent_module_commit_analyzed == "last-module-sha-analyzed"
 
     @patch(ns("generate_project_test_mappings"))
     def test_no_module_name_passed_in(self, generate_project_test_mappings_mock):
@@ -251,5 +253,7 @@ class TestGenerateTestMappings:
             mock_evg_api, "mongodb-mongo-master", "some-project-commit-sha", SOURCE_RE, TEST_RE
         )
         assert test_mappings_result.test_mappings_list == ["mock-project-mappings"]
-        assert test_mappings_result.project_last_commit_sha_analyzed == "last-project-sha-analyzed"
-        assert not test_mappings_result.module_last_commit_sha_analyzed
+        assert (
+            test_mappings_result.most_recent_project_commit_analyzed == "last-project-sha-analyzed"
+        )
+        assert not test_mappings_result.most_recent_module_commit_analyzed

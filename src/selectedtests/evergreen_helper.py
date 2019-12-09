@@ -38,7 +38,7 @@ def get_evg_module_for_project(
     return modules.get(module_repo)
 
 
-def get_project_commit_on_date(evg_api, evergreen_project, after_date):
+def get_commit_on_date(evg_api, evergreen_project, after_date):
     project_commit = None
     with TemporaryDirectory() as temp_dir:
         evg_project = get_evg_project(evg_api, evergreen_project)

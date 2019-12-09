@@ -1,18 +1,20 @@
 """Test Mappings class to create test mappings."""
 import structlog
 import os.path
-import pdb
 
 from collections import defaultdict, namedtuple
 from typing import Pattern
 from git import Repo
 from tempfile import TemporaryDirectory
 from evergreen.api import EvergreenApi
-from evergreen.manifest import ManifestModule
 from selectedtests.git_helper import init_repo, modified_files_for_commit
 from selectedtests.evergreen_helper import get_evg_project, get_evg_module_for_project
 
 LOGGER = structlog.get_logger(__name__)
+TestMappingsResult = namedtuple(
+    "ProjectMappingsResult",
+    ["test_mappings_list", "project_last_commit_sha_analyzed", "module_last_commit_sha_analyzed"],
+)
 
 
 def generate_test_mappings(
@@ -49,14 +51,6 @@ def generate_test_mappings(
     log.info("Starting to generate test mappings")
     project_last_commit_sha_analyzed = None
     module_last_commit_sha_analyzed = None
-    TestMappingsResult = namedtuple(
-        "ProjectMappingsResult",
-        [
-            "test_mappings_list",
-            "project_last_commit_sha_analyzed",
-            "module_last_commit_sha_analyzed",
-        ],
-    )
     with TemporaryDirectory() as temp_dir:
         test_mappings_list, project_last_commit_sha_analyzed = generate_project_test_mappings(
             evg_api, evergreen_project, temp_dir, source_re, test_re, after_project_commit

@@ -1,5 +1,6 @@
-import selectedtests.work_items.process_test_mapping_work_items as under_test
 from unittest.mock import MagicMock, patch
+from selectedtests.test_mappings.create_test_mappings import TestMappingsResult
+import selectedtests.work_items.process_test_mapping_work_items as under_test
 
 
 NS = "selectedtests.work_items.process_test_mapping_work_items"
@@ -66,35 +67,46 @@ class TestProcessOneTestMappingWorkItem:
         work_item_mock.complete.assert_not_called()
 
 
-#  class TestRunCreateTestMappings:
-#  @patch(ns("get_project_commit_on_date"))
-#  @patch(ns("generate_test_mappings"))
-#  def test_mappings_are_created(self, generate_test_mappings_mock, get_project_commit_on_date_mock):
-#  generate_test_mappings_mock.return_value = ["mock-mapping"]
-#  evg_api_mock = MagicMock()
-#  mongo_mock = MagicMock()
-#  logger_mock = MagicMock()
-#  work_item_mock = MagicMock(source_file_regex="src", test_file_regex="test", module=None)
+class TestRunCreateTestMappings:
+    @patch(ns("generate_test_mappings"))
+    @patch(ns("get_commit_on_date"))
+    def test_mappings_are_created(self, get_commit_on_date_mock, generate_test_mappings_mock):
+        get_commit_on_date_mock.return_value = "commit-sha-six-months-ago"
+        evg_api_mock = MagicMock()
+        mongo_mock = MagicMock()
+        logger_mock = MagicMock()
+        generate_test_mappings_mock.return_value = TestMappingsResult(
+            test_mappings_list=["mock-mapping"],
+            project_last_commit_sha_analyzed="last-project-sha-analyzed",
+            module_last_commit_sha_analyzed="last-module-sha-analyzed",
+        )
+        work_item_mock = MagicMock(source_file_regex="src", test_file_regex="test", module=None)
 
-#  under_test._run_create_test_mappings(
-#  evg_api_mock, mongo_mock, work_item_mock, after_date=None, log=logger_mock
-#  )
+        under_test._run_create_test_mappings(
+            evg_api_mock, mongo_mock, work_item_mock, after_date=None, log=logger_mock
+        )
 
-#  mongo_mock.test_mappings.return_value.insert_many.assert_called_once_with(["mock-mapping"])
+        mongo_mock.test_mappings.return_value.insert_many.assert_called_once_with(["mock-mapping"])
 
-#  @patch(ns("generate_test_mappings"))
-#  def test_no_mappings_are_created(self, generate_test_mappings_mock):
-#  generate_test_mappings_mock.return_value = []
-#  evg_api_mock = MagicMock()
-#  mongo_mock = MagicMock()
-#  logger_mock = MagicMock()
-#  mongo_mock.test_mappings.return_value.insert_many.side_effect = TypeError(
-#  "documents must be a non-empty list"
-#  )
-#  work_item_mock = MagicMock(source_file_regex="src", test_file_regex="test", module=None)
+    @patch(ns("generate_test_mappings"))
+    @patch(ns("get_commit_on_date"))
+    def test_no_mappings_are_created(self, get_commit_on_date_mock, generate_test_mappings_mock):
+        get_commit_on_date_mock.return_value = "commit-sha-six-months-ago"
+        evg_api_mock = MagicMock()
+        mongo_mock = MagicMock()
+        logger_mock = MagicMock()
+        generate_test_mappings_mock.return_value = TestMappingsResult(
+            test_mappings_list=[],
+            project_last_commit_sha_analyzed=None,
+            module_last_commit_sha_analyzed=None,
+        )
+        mongo_mock.test_mappings.return_value.insert_many.side_effect = TypeError(
+            "documents must be a non-empty list"
+        )
+        work_item_mock = MagicMock(source_file_regex="src", test_file_regex="test", module=None)
 
-#  under_test._run_create_test_mappings(
-#  evg_api_mock, mongo_mock, work_item_mock, after_date=None, log=logger_mock
-#  )
+        under_test._run_create_test_mappings(
+            evg_api_mock, mongo_mock, work_item_mock, after_date=None, log=logger_mock
+        )
 
-#  mongo_mock.test_mappings.return_value.insert_many.assert_not_called()
+        mongo_mock.test_mappings.return_value.insert_many.assert_not_called()

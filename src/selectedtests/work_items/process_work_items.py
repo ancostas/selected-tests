@@ -107,15 +107,16 @@ def _run_create_task_mappings(
     :param work_item: An instance of ProjectTestMappingWorkItem.
     :param after_date: The date at which to start analyzing commits of the project.
     """
+    after_version = get_version_on_date(evg_api, work_item.project, after_date)
     source_re = re.compile(work_item.source_file_regex)
     module_source_re = None
     if work_item.module:
         module_source_re = re.compile(work_item.module_source_file_regex)
 
-    mappings = TaskMappings.create_task_mappings(
+    mappings, last_version_analyzed = TaskMappings.create_task_mappings(
         evg_api,
         work_item.project,
-        after_date,
+        after_version,
         source_re,
         module_name=work_item.module,
         module_file_regex=module_source_re,
@@ -124,6 +125,18 @@ def _run_create_task_mappings(
     transformed_mappings = mappings.transform()
     if transformed_mappings:
         mongo.task_mappings().insert_many(transformed_mappings)
+        # this can be changed to insert later
+        mongo.task_mappings_project_config().update_one(
+            {"project": work_item.project},
+            {
+                "$set": {
+                    "project": work_item.project,
+                    "module": work_item.module,
+                    "last_version_analyzed": last_version_analyzed,
+                }
+            },
+            True,
+        )
     log.info("Finished task mapping work item processing")
 
     return True
@@ -177,11 +190,11 @@ def _process_one_test_mapping_work_item(
     """
     log = LOGGER.bind(project=work_item.project, module=work_item.module)
     log.info("Starting test mapping work item processing for work_item")
-    if _run_create_test_mappings_past_six_months(evg_api, mongo, work_item, after_date, log):
+    if _run_create_test_mappings(evg_api, mongo, work_item, after_date, log):
         work_item.complete(mongo.test_mappings_queue())
 
 
-def _run_create_test_mappings_past_six_months(
+def _run_create_test_mappings(
     evg_api: EvergreenApi,
     mongo: MongoWrapper,
     work_item: ProjectTestMappingWorkItem,

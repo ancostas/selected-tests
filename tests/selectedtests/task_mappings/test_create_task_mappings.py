@@ -34,7 +34,7 @@ class TestFullRunThrough:
         output = under_test.TaskMappings.create_task_mappings(
             mock_evg_api,
             project_name,
-            datetime.fromisoformat("2019-10-11T19:10:38"),
+            "some-evergreen-version",
             re.compile("src.*"),
         )
 
@@ -75,12 +75,10 @@ class TestCreateTaskMappings:
         flipped_mock.return_value = {"variant1": ["task1", "task2"], "variant2": ["task3", "task4"]}
         project_name = "project"
 
-        after = datetime.combine(date(1, 1, 1), time(1, 1, 0))
-
         mappings = under_test.TaskMappings.create_task_mappings(
             evg_api_mock,
             project_name,
-            after,
+            "some-evergreen-version",
             file_regex=None,
             module_name="module",
             module_file_regex=None,
@@ -131,12 +129,10 @@ class TestCreateTaskMappings:
         flipped_mock.return_value = {"variant1": ["task1", "task2"], "variant2": ["task3", "task4"]}
         project_name = "project"
 
-        after = datetime.combine(date(1, 1, 1), time(1, 1, 0))
-
         mappings = under_test.TaskMappings.create_task_mappings(
             evg_api_mock,
             project_name,
-            after,
+            "some-evergreen-version",
             file_regex=None,
             module_name="",
             module_file_regex=None,
@@ -176,12 +172,10 @@ class TestCreateTaskMappings:
         flipped_mock.return_value = {}
         project_name = "project"
 
-        after = datetime.combine(date(1, 1, 1), time(1, 1, 0))
-
         mappings = under_test.TaskMappings.create_task_mappings(
             evg_api_mock,
             project_name,
-            after,
+            "some-evergreen-version",
             file_regex=None,
             module_name="",
             module_file_regex=None,
@@ -206,14 +200,12 @@ class TestCreateTaskMappings:
 
         project_name = "project"
 
-        after = datetime.combine(date(1, 1, 1), time(1, 1, 0))
-
         build_regex = re.compile("is_this_passed_correctly")
 
         under_test.TaskMappings.create_task_mappings(
             evg_api_mock,
             project_name,
-            after,
+            "some-evergreen-version",
             file_regex=None,
             module_name="",
             module_file_regex=None,

@@ -1,9 +1,10 @@
 """Evergreen.py helper."""
-from typing import Optional
-from selectedtests.git_helper import init_repo
-from tempfile import TemporaryDirectory
+from datetime import datetime
 from evergreen.api import EvergreenApi, Project
 from evergreen.manifest import ManifestModule
+from selectedtests.git_helper import init_repo
+from tempfile import TemporaryDirectory
+from typing import Optional
 
 
 def get_evg_project(evg_api: EvergreenApi, project: str) -> Optional[Project]:
@@ -65,3 +66,9 @@ def get_module_commit_on_date(evg_api, evergreen_project, after_date, module_nam
             module_commit = commit.hexsha
 
     return module_commit
+
+
+def get_version_on_date(evg_api, evergreen_project, after_date):
+    windowed_versions = evg_api.versions_by_project_time_window(evergreen_project, datetime.utcnow(), after_date)
+    windowed_list = list(windowed_versions)
+    return windowed_list[-1]

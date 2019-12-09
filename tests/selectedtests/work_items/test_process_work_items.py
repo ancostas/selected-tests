@@ -159,7 +159,7 @@ class TestProcessQueuedTestMappingWorkItems:
 
 
 class TestProcessOneTestMappingWorkItem:
-    @patch(ns("_run_create_test_mappings_past_six_months"))
+    @patch(ns("_run_create_test_mappings"))
     def test_work_items_completed_successfully_are_marked_complete(
         self, run_create_test_mappings_mock
     ):
@@ -174,7 +174,7 @@ class TestProcessOneTestMappingWorkItem:
 
         work_item_mock.complete.assert_called_once()
 
-    @patch(ns("_run_create_test_mappings_past_six_months"))
+    @patch(ns("_run_create_test_mappings"))
     def test_work_items_completed_unsuccessfully_are_marked_not_complete(
         self, run_create_test_mappings_mock
     ):
@@ -200,7 +200,7 @@ class TestProcessOneTestMappingWorkItem:
 #  logger_mock = MagicMock()
 #  work_item_mock = MagicMock(source_file_regex="src", test_file_regex="test", module=None)
 
-#  under_test._run_create_test_mappings_past_six_months(
+#  under_test._run_create_test_mappings(
 #  evg_api_mock, mongo_mock, work_item_mock, after_date=None, log=logger_mock
 #  )
 
@@ -217,7 +217,7 @@ class TestProcessOneTestMappingWorkItem:
 #  )
 #  work_item_mock = MagicMock(source_file_regex="src", test_file_regex="test", module=None)
 
-#  under_test._run_create_test_mappings_past_six_months(
+#  under_test._run_create_test_mappings(
 #  evg_api_mock, mongo_mock, work_item_mock, after_date=None, log=logger_mock
 #  )
 

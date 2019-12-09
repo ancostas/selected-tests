@@ -5,7 +5,7 @@ import logging
 import re
 import structlog
 
-from evergreen.api import RetryingEvergreenApi
+from selectedtests.helpers import get_evg_api
 from selectedtests.test_mappings.create_test_mappings import generate_test_mappings
 
 LOGGER = structlog.get_logger(__name__)
@@ -28,7 +28,7 @@ def _setup_logging(verbose: bool):
 def cli(ctx, verbose: str):
     """Entry point for the cli interface. It sets up the evg api instance and logging."""
     ctx.ensure_object(dict)
-    ctx.obj["evg_api"] = RetryingEvergreenApi.get_api(use_config_file=True)
+    ctx.obj["evg_api"] = get_evg_api()
 
     _setup_logging(verbose)
 

@@ -13,11 +13,11 @@ def ns(relative_name):
 
 
 class TestCli:
-    @patch(ns("RetryingEvergreenApi"))
+    @patch(ns("get_evg_api"))
     @patch(ns("generate_test_mappings"))
-    def test_arguments_passed_in(self, generate_test_mappings_mock, evg_api):
+    def test_arguments_passed_in(self, generate_test_mappings_mock, get_evg_api_mock):
         mock_evg_api = MagicMock()
-        evg_api.get_api.return_value = mock_evg_api
+        get_evg_api_mock.return_value = mock_evg_api
         generate_test_mappings_mock.return_value = "mock-response"
 
         runner = CliRunner()
@@ -51,11 +51,11 @@ class TestCli:
                 output = json.load(data)
                 assert output == "mock-response"
 
-    @patch(ns("RetryingEvergreenApi"))
+    @patch(ns("get_evg_api"))
     @patch(ns("generate_test_mappings"))
-    def test_module_after_commit_sha_not_passed_in(self, generate_test_mappings_mock, evg_api):
+    def test_module_after_commit_sha_not_passed_in(self, generate_test_mappings_mock, get_evg_api_mock):
         mock_evg_api = MagicMock()
-        evg_api.get_api.return_value = mock_evg_api
+        get_evg_api_mock.return_value = mock_evg_api
         generate_test_mappings_mock.return_value = "mock-response"
 
         runner = CliRunner()
@@ -84,11 +84,11 @@ class TestCli:
                 in result.stdout
             )
 
-    @patch(ns("RetryingEvergreenApi"))
+    @patch(ns("get_evg_api"))
     @patch(ns("generate_test_mappings"))
-    def test_module_regexes_not_passed_in(self, generate_test_mappings_mock, evg_api):
+    def test_module_regexes_not_passed_in(self, generate_test_mappings_mock, get_evg_api_mock):
         mock_evg_api = MagicMock()
-        evg_api.get_api.return_value = mock_evg_api
+        get_evg_api_mock.return_value = mock_evg_api
         generate_test_mappings_mock.return_value = "mock-response"
 
         runner = CliRunner()

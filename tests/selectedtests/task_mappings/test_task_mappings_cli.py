@@ -21,7 +21,7 @@ class TestCli:
         expected_result = ["mock-response"]
         created_task_mock = MagicMock()
         created_task_mock.transform.return_value = expected_result
-        create_task_mappings_mock.return_value = (created_task_mock, "last-sha-analyzed")
+        create_task_mappings_mock.return_value = (created_task_mock, "most-recent-sha-analyzed")
 
         runner = CliRunner()
         with runner.isolated_filesystem():
@@ -53,7 +53,7 @@ class TestCli:
     def test_module_regexes_not_passed_in(self, create_task_mappings_mock, get_evg_api_mock):
         mock_get_evg_api_mock = MagicMock()
         get_evg_api_mock.return_value = mock_get_evg_api_mock
-        create_task_mappings_mock.return_value = ("mock-response", "last-sha-analyzed")
+        create_task_mappings_mock.return_value = ("mock-response", "most-recent-sha-analyzed")
 
         runner = CliRunner()
         with runner.isolated_filesystem():

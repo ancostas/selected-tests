@@ -11,7 +11,7 @@ from typing import Any
 from selectedtests.datasource.mongo_wrapper import MongoWrapper
 from selectedtests.evergreen_helper import get_module_commit_on_date, get_project_commit_on_date
 from selectedtests.test_mappings.create_test_mappings import generate_test_mappings
-from selectedtests.work_items.project_test_mapping_work_item import ProjectTestMappingWorkItem
+from selectedtests.work_items.test_mapping_work_item import ProjectTestMappingWorkItem
 
 LOGGER = structlog.get_logger()
 

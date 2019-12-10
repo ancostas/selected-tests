@@ -10,7 +10,7 @@ from selectedtests.datasource.mongo_wrapper import MongoWrapper
 from selectedtests.evergreen_helper import get_version_on_date
 from selectedtests.task_mappings.create_task_mappings import TaskMappings
 from selectedtests.work_items.process_test_mapping_work_items import clear_in_progress_work
-from selectedtests.work_items.project_task_mapping_work_item import ProjectTaskMappingWorkItem
+from selectedtests.work_items.task_mapping_work_item import ProjectTaskMappingWorkItem
 
 LOGGER = structlog.get_logger()
 

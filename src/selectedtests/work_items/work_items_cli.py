@@ -12,8 +12,8 @@ from selectedtests.work_items.process_task_mapping_work_items import (
 from selectedtests.datasource.mongo_wrapper import MongoWrapper
 from selectedtests.helpers import get_evg_api, setup_logging
 from selectedtests.evergreen_helper import get_evg_project
-from selectedtests.work_items.project_task_mapping_work_item import ProjectTaskMappingWorkItem
-from selectedtests.work_items.project_test_mapping_work_item import ProjectTestMappingWorkItem
+from selectedtests.work_items.task_mapping_work_item import ProjectTaskMappingWorkItem
+from selectedtests.work_items.test_mapping_work_item import ProjectTestMappingWorkItem
 
 DEFAULT_WEEKS_BACK = 24
 

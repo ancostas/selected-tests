@@ -94,7 +94,10 @@ class TestRunCreateTaskMappings:
         get_version_on_date_mock.return_value = "version-six-months-ago"
         task_mappings_mock = MagicMock()
         task_mappings_mock.transform.return_value = ["mock-response"]
-        create_task_mappings_mock.return_value = (task_mappings_mock, "last-version-analyzed")
+        create_task_mappings_mock.return_value = (
+            task_mappings_mock,
+            "most-recent-version-analyzed",
+        )
         evg_api_mock = MagicMock()
         mongo_mock = MagicMock()
         logger_mock = MagicMock()
@@ -112,7 +115,10 @@ class TestRunCreateTaskMappings:
         get_version_on_date_mock.return_value = "version-six-months-ago"
         task_mappings_mock = MagicMock()
         task_mappings_mock.transform.return_value = []
-        create_task_mappings_mock.return_value = (task_mappings_mock, "last-version-analyzed")
+        create_task_mappings_mock.return_value = (
+            task_mappings_mock,
+            "most-recent-version-analyzed",
+        )
         evg_api_mock = MagicMock()
         mongo_mock = MagicMock()
         logger_mock = MagicMock()

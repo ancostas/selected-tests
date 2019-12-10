@@ -140,7 +140,7 @@ class TestGenerateProjectTestMappings:
             commits = list(repo.iter_commits("master"))
             repo_newest_commit = commits[0]
             repo_oldest_commit = commits[-1]
-            mappings, last_commit_sha_analyzed = under_test.generate_project_test_mappings(
+            mappings, most_recent_commit_analyzed = under_test.generate_project_test_mappings(
                 mock_evg_api,
                 "mongodb-mongo-master",
                 tmpdir,
@@ -149,7 +149,7 @@ class TestGenerateProjectTestMappings:
                 repo_oldest_commit.hexsha,
             )
 
-        assert last_commit_sha_analyzed == repo_newest_commit.hexsha
+        assert most_recent_commit_analyzed == repo_newest_commit.hexsha
 
         assert len(mappings) == 1
         test_mapping = mappings[0]
@@ -182,7 +182,7 @@ class TestGenerateModuleTestMappings:
             commits = list(repo.iter_commits("master"))
             repo_newest_commit = commits[0]
             repo_oldest_commit = commits[-1]
-            mappings, last_commit_sha_analyzed = under_test.generate_module_test_mappings(
+            mappings, most_recent_commit_analyzed = under_test.generate_module_test_mappings(
                 mock_evg_api,
                 "mongodb-mongo-master",
                 "my-module",
@@ -192,7 +192,7 @@ class TestGenerateModuleTestMappings:
                 repo_oldest_commit,
             )
 
-        assert last_commit_sha_analyzed == repo_newest_commit.hexsha
+        assert most_recent_commit_analyzed == repo_newest_commit.hexsha
 
         assert len(mappings) == 1
         test_mapping = mappings[0]

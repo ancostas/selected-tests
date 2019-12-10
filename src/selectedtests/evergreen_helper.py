@@ -1,10 +1,12 @@
 """Evergreen.py helper."""
 from datetime import datetime
+from typing import Optional
+
 from evergreen.api import EvergreenApi, Project
 from evergreen.manifest import ManifestModule
-from selectedtests.git_helper import init_repo
 from tempfile import TemporaryDirectory
-from typing import Optional
+
+from selectedtests.git_helper import init_repo
 
 
 def get_evg_project(evg_api: EvergreenApi, project: str) -> Optional[Project]:

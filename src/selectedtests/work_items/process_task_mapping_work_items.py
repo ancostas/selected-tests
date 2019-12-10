@@ -99,17 +99,6 @@ def _run_create_task_mappings(
     transformed_mappings = mappings.transform()
     if transformed_mappings:
         mongo.task_mappings().insert_many(transformed_mappings)
-        # this can be changed to insert later
-        mongo.task_mappings_project_config().update_one(
-            {"project": work_item.project},
-            {
-                "$set": {
-                    "project": work_item.project,
-                    "most_recent_version_analyzed": most_recent_version_analyzed,
-                }
-            },
-            True,
-        )
     log.info("Finished task mapping work item processing")
 
     return True

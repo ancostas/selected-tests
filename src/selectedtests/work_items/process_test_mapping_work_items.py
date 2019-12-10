@@ -1,12 +1,12 @@
 """Functions for processing project test mapping work items."""
+from datetime import datetime
+from typing import Any, Iterable
 import re
 import structlog
-from typing import Iterable
 
-from datetime import datetime
 from evergreen.api import EvergreenApi
 from pymongo.collection import Collection
-from typing import Any
+from tempfile import TemporaryDirectory
 
 from selectedtests.datasource.mongo_wrapper import MongoWrapper
 from selectedtests.evergreen_helper import get_module_commit_on_date, get_project_commit_on_date
@@ -95,16 +95,20 @@ def _run_create_test_mappings(
     :param work_item: An instance of ProjectTestMappingWorkItem.
     :param after_date: The date at which to start analyzing commits of the project.
     """
-    after_project_commit = get_project_commit_on_date(evg_api, work_item.project, after_date)
+    with TemporaryDirectory() as temp_dir:
+        after_project_commit = get_project_commit_on_date(
+            temp_dir, evg_api, work_item.project, after_date
+        )
     source_re = re.compile(work_item.source_file_regex)
     test_re = re.compile(work_item.test_file_regex)
     after_module_commit = None
     module_source_re = None
     module_test_re = None
     if work_item.module:
-        after_module_commit = get_module_commit_on_date(
-            evg_api, work_item.project, after_date, work_item.module
-        )
+        with TemporaryDirectory() as temp_dir:
+            after_module_commit = get_module_commit_on_date(
+                temp_dir, evg_api, work_item.project, work_item.module, after_date
+            )
         module_source_re = re.compile(work_item.module_source_file_regex)
         module_test_re = re.compile(work_item.module_test_file_regex)
 

@@ -68,47 +68,11 @@ class TestGetEvgModuleForProject:
         assert not module
 
 
-@pytest.fixture(scope="function")
-def repo_with_interval_commits(monkeypatch):
-    def _repo(tmpdir):
-        repo = git.Repo.init(tmpdir)
-
-        # commit something four days ago
-        four_days_ago = str(datetime.combine(datetime.now() - timedelta(days=4), time()))
-        monkeypatch.setenv("GIT_AUTHOR_DATE", four_days_ago)
-        monkeypatch.setenv("GIT_COMMITTER_DATE", four_days_ago)
-        repo.index.commit("initial commit -- no files changed")
-
-        # commit something two days ago
-        two_days_ago = str(datetime.combine(datetime.now() - timedelta(days=2), time()))
-        monkeypatch.setenv("GIT_AUTHOR_DATE", two_days_ago)
-        monkeypatch.setenv("GIT_COMMITTER_DATE", two_days_ago)
-        some_file = os.path.join(tmpdir, "some-file")
-        open(some_file, "wb").close()
-        repo.index.add([some_file])
-        commit_two_days_ago = repo.index.commit("add some file")
-
-        # commit something today
-        now = str(datetime.combine(datetime.now(), time()))
-        monkeypatch.setenv("GIT_AUTHOR_DATE", now)
-        monkeypatch.setenv("GIT_COMMITTER_DATE", now)
-        another_file = os.path.join(tmpdir, "another-file")
-        open(another_file, "wb").close()
-        repo.index.add([another_file])
-        repo.index.commit("add another file")
-        return repo, commit_two_days_ago
-
-    return _repo
-
-
 class TestGetProjectCommitOnDate:
     @patch(ns("get_evg_project"))
     @patch(ns("init_repo"))
-    def test_returns_project_commit_that_happened_before_date(
-        self,
-        init_repo_mock,
-        get_evg_project_mock,
-        repo_with_interval_commits
+    def test_returns_project_commit_that_happened_after_date(
+        self, init_repo_mock, get_evg_project_mock, repo_with_interval_commits
     ):
         evg_api = MagicMock()
         project = "valid-evergreen-project"
@@ -118,27 +82,51 @@ class TestGetProjectCommitOnDate:
             init_repo_mock.return_value, commit_two_days_ago = repo_with_interval_commits(tmpdir)
 
             three_days_ago = datetime.utcnow().replace(tzinfo=pytz.UTC) - timedelta(days=3)
-            commit_on_date = under_test.get_project_commit_on_date(tmpdir, evg_api, project, three_days_ago)
+            commit_on_date = under_test.get_project_commit_on_date(
+                tmpdir, evg_api, project, three_days_ago
+            )
 
+            # returned commit should be the farthest back commit that happened
+            # after the after_date, which is three days ago
             assert commit_on_date == commit_two_days_ago.hexsha
 
 
 class TestGetModuleCommitOnDate:
     @patch(ns("get_evg_project"))
     @patch(ns("init_repo"))
-    def test_returns_module_commit_that_happened_before_date(
-        self,
-        init_repo_mock,
-        get_evg_module_for_project,
-        repo_with_interval_commits
+    def test_returns_module_commit_that_happened_after_date(
+        self, init_repo_mock, get_evg_module_for_project, repo_with_interval_commits
     ):
         evg_api = MagicMock()
-        get_evg_module_for_project.return_value = MagicMock(repo="repo", branch="branch", owner="owner")
+        get_evg_module_for_project.return_value = MagicMock(
+            repo="repo", branch="branch", owner="owner"
+        )
         with TemporaryDirectory() as tmpdir:
 
             init_repo_mock.return_value, commit_two_days_ago = repo_with_interval_commits(tmpdir)
 
             three_days_ago = datetime.utcnow().replace(tzinfo=pytz.UTC) - timedelta(days=3)
-            commit_on_date = under_test.get_project_commit_on_date(tmpdir, evg_api, "my-module", three_days_ago)
+            commit_on_date = under_test.get_project_commit_on_date(
+                tmpdir, evg_api, "my-module", three_days_ago
+            )
 
+            # returned commit should be the farthest back commit that happened
+            # after the after_date, which is three days ago
             assert commit_on_date == commit_two_days_ago.hexsha
+
+
+class TestGetVersionOnDate:
+    def test_returns_version_that_happened_after_date(self):
+        evg_api = MagicMock()
+        now = datetime.utcnow()
+        past_three_days_of_versions = [
+            MagicMock(version_id=f"version-{i}-days-ago", create_time=now - timedelta(days=i))
+            for i in range(4)
+        ]
+        evg_api.versions_by_project_time_window.return_value = past_three_days_of_versions
+        three_days_ago = datetime.utcnow() - timedelta(days=3)
+        version_on_date = under_test.get_version_on_date(evg_api, "my-project", three_days_ago)
+
+        # returned version should be the farthest back version that happened
+        # after the after_date, which is three days ago
+        assert version_on_date == "version-3-days-ago"

@@ -1,16 +1,16 @@
 """Method to create the task mappings for a given evergreen project."""
-import pdb
-from concurrent.futures import ThreadPoolExecutor as Executor
-from typing import List, Dict, Set
-from tempfile import TemporaryDirectory
-from re import match
-from typing import Pattern
+from __future__ import annotations
 
+from re import match
+from typing import Dict, List, Pattern, Set, Tuple
+
+from boltons.iterutils import windowed_iter
+from concurrent.futures import ThreadPoolExecutor as Executor
 from evergreen.api import Version, Build, Task, EvergreenApi
 from evergreen.manifest import ManifestModule
-from boltons.iterutils import windowed_iter
 from git import Repo, DiffIndex
 from structlog import get_logger
+from tempfile import TemporaryDirectory
 
 from selectedtests.git_helper import get_changed_files, init_repo
 from selectedtests.evergreen_helper import get_evg_project
@@ -42,7 +42,7 @@ class TaskMappings:
         module_name: str = None,
         module_file_regex: Pattern = None,
         build_regex: Pattern = None,
-    ):
+    ) -> Tuple[TaskMappings, str]:
         """
         Create the task mappings for an evergreen project. Optionally looks at an associated module.
 
@@ -53,7 +53,7 @@ class TaskMappings:
         :param module_name: Name of the module associated with the evergreen project to also analyze
         :param module_file_regex: Regex pattern to match changed files of the module against.
         :param build_regex: Regex pattern to match build variant names against. Defaults to None.
-        :return: An instance of the task mappings class
+        :return: An instance of TaskMappings and version_id of the most recent version analyzed.
         """
         log = LOGGER.bind(
             project=evergreen_project, module=module_name, after_version=after_version

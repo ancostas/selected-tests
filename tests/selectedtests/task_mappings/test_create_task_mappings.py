@@ -1,8 +1,8 @@
-from unittest.mock import MagicMock, patch
-import pdb
-from datetime import datetime, date, time
 import re
+from datetime import datetime, date, time
+
 from copy import deepcopy
+from unittest.mock import MagicMock, patch
 
 from selectedtests.task_mappings import create_task_mappings as under_test
 
@@ -24,6 +24,12 @@ class TestFullRunThrough:
         mock_evg_api = MagicMock()
         mock_evg_api.versions_by_project.return_value = evg_versions
 
+        # evg_versions is a list containing previous, current, and next version. Since we
+        # use a windowed_iter of 3 to loop through these, current version is the
+        # only one analyzed.
+        current_version = evg_versions[1]
+        only_version_analyzed = current_version
+
         project_name = "mongodb-mongo-master"
         mock_evg_api.all_projects.return_value = [
             MagicMock(identifier=project_name),
@@ -38,14 +44,7 @@ class TestFullRunThrough:
 
         transformed_out = output.transform()
         assert expected_task_mappings_output == transformed_out
-
-        # most_recent_version_analyzed should be equal to the current_version
-        # version_id since current_version is most recent (in terms of version
-        # date) of the versions analyzed
-        assert (
-            most_recent_version_analyzed
-            == "mongodb_mongo_master_cf4c944977a348494d81eeaf7eddb96ef0457876"
-        )
+        assert most_recent_version_analyzed == only_version_analyzed.version_id
 
 
 class TestCreateTaskMappings:
@@ -72,9 +71,15 @@ class TestCreateTaskMappings:
             )
             for i in range(3)
         ]
+        # This sets versions_by_project to return versions with the version_ids
+        # in the following order: ['version-2', 'version-1', 'version-0']
         evg_api_mock.versions_by_project.return_value.reverse()
-        associated_module_mock.return_value = None
 
+        # Since we use a windowed_iter of 3 to loop through these, the version at index 1 is the
+        # only one analyzed.
+        only_version_analyzed = evg_api_mock.versions_by_project.return_value[1]
+
+        associated_module_mock.return_value = None
         module_changed_mock.return_value = {"module_file"}
         filtered_mock.return_value = {f"file{i}" for i in range(2)}
 
@@ -94,6 +99,8 @@ class TestCreateTaskMappings:
             module_file_regex=None,
         )
 
+        assert most_recent_version_analyzed == only_version_analyzed.version_id
+
         assert len(expected_file_list) == len(mappings.mappings)
         for file in expected_file_list:
             file_mappings = mappings.mappings.get(file)["builds"]
@@ -105,11 +112,6 @@ class TestCreateTaskMappings:
                 assert variant_output is not None
                 for task in expected_tasks:
                     assert task in variant_output
-
-        #  versions_by_project returns ['version-2', 'version-1', 'version-0'],
-        #  so version-1 is the only one analyzed and thus the
-        #  most_recent_version_analyzed
-        assert most_recent_version_analyzed == "version-1"
 
     @patch(ns("_get_evg_project_and_init_repo"))
     @patch(ns("_get_diff"))

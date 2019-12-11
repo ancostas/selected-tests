@@ -1,12 +1,13 @@
 """Test Mappings class to create test mappings."""
-import structlog
 import os.path
+import structlog
 
-from collections import defaultdict, namedtuple
-from typing import Pattern
-from git import Repo
 from tempfile import TemporaryDirectory
+from typing import Pattern, Tuple
+from collections import defaultdict, namedtuple
 from evergreen.api import EvergreenApi
+from git import Repo
+
 from selectedtests.git_helper import init_repo, modified_files_for_commit
 from selectedtests.evergreen_helper import get_evg_project, get_evg_module_for_project
 
@@ -31,11 +32,11 @@ def generate_test_mappings(
     after_module_commit: str = None,
     module_source_re: Pattern = None,
     module_test_re: Pattern = None,
-):
+) -> TestMappingsResult:
     """
     Generate test mappings for an evergreen project and its associated module if module is provided.
 
-    :param evg_api: An instance of the evg_api client
+    :param evg_api: An instance of the evg_api client.
     :param evergreen_project: The name of the evergreen project to analyze.
     :param after_project_commit: The commit sha at which to start analyzing commits of the project.
     :param source_re: Regex pattern to match changed source files against.
@@ -44,7 +45,7 @@ def generate_test_mappings(
     :param after_module_commit: The commit sha at which to start analyzing commits of the module.
     :param module_source_re: Regex pattern to match changed module source files against.
     :param module_test_re: Regex pattern to match changed module test files against.
-    :return: A list of test mappings for the evergreen project and (optionally) its module
+    :return: An instance of TestMappingsResult.
     """
     log = LOGGER.bind(
         project=evergreen_project,
@@ -72,12 +73,11 @@ def generate_test_mappings(
             )
             test_mappings_list.extend(module_test_mappings_list)
     log.info("Generated test mappings list", test_mappings_length=len(test_mappings_list))
-    test_mappings_result = TestMappingsResult(
+    return TestMappingsResult(
         test_mappings_list=test_mappings_list,
         most_recent_project_commit_analyzed=most_recent_project_commit_analyzed,
         most_recent_module_commit_analyzed=most_recent_module_commit_analyzed,
     )
-    return test_mappings_result
 
 
 def generate_project_test_mappings(
@@ -87,7 +87,7 @@ def generate_project_test_mappings(
     source_re: Pattern,
     test_re: Pattern,
     after_commit: str,
-):
+) -> Tuple[list, str]:
     """
     Generate test mappings for an evergreen project.
 
@@ -97,7 +97,7 @@ def generate_project_test_mappings(
     :param source_re: Regex pattern to match changed source files against.
     :param test_re: Regex pattern to match changed test files against.
     :param after_commit: The commit sha at which to start analyzing commits of the project's git repo.
-    :return: A list of test mappings for the evergreen project
+    :return: A list of test mappings for the project and the most recent commit sha analyzed.
     """
     evg_project = get_evg_project(evg_api, evergreen_project)
     project_repo = init_repo(
@@ -122,7 +122,7 @@ def generate_module_test_mappings(
     module_source_re: Pattern,
     module_test_re: Pattern,
     after_commit: str,
-):
+) -> Tuple[list, str]:
     """
     Generate test mappings for an evergreen module.
 
@@ -133,7 +133,7 @@ def generate_module_test_mappings(
     :param module_source_re: Regex pattern to match changed module source files against.
     :param module_test_re: Regex pattern to match changed module test files against.
     :param after_commit: The commit sha at which to start analyzing commits of the module's git repo.
-    :return: A list of test mappings for the evergreen module
+    :return: A list of test mappings for the project and the most recent commit sha analyzed.
     """
     module = get_evg_module_for_project(evg_api, evergreen_project, module_name)
     module_repo = init_repo(temp_dir, module.repo, module.branch, module.owner)

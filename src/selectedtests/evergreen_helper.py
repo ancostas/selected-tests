@@ -31,7 +31,7 @@ def get_evg_module_for_project(
     Fetch the module associated with an Evergreen project.
 
     :param evg_api: An instance of the evg_api client
-    :param project: The name of the evergreen project to analyze.
+    :param project: The name of the evergreen project to analyze
     :param module_repo: Name of the module to analyze
     :return: evg_api client instance of the module
     """
@@ -44,6 +44,15 @@ def get_evg_module_for_project(
 def get_project_commit_on_date(
     temp_dir: TemporaryDirectory, evg_api: EvergreenApi, project: str, after_date: datetime
 ):
+    """
+    Fetch the earliest commit in an Evergreen project's repo that comes after a given after_date.
+
+    :param temp_dir: The place where to clone the repo to
+    :param evg_api: An instance of the evg_api client
+    :param project: The name of the evergreen project to analyze
+    :param after_date: The date after which the desired commit should occur
+    :return: The commit sha of the desired project repo commit
+    """
     evg_project = get_evg_project(evg_api, project)
     project_repo = init_repo(
         temp_dir, evg_project.repo_name, evg_project.branch_name, evg_project.owner_name
@@ -65,6 +74,16 @@ def get_module_commit_on_date(
     module_name: str,
     after_date: datetime,
 ):
+    """
+    Fetch the earliest commit in an Evergreen module's repo that comes after a given after_date.
+
+    :param temp_dir: The place where to clone the repo to
+    :param evg_api: An instance of the evg_api client
+    :param project: The name of the evergreen project to analyze
+    :param module_name: The name of the Evergreen module to analyze
+    :param after_date: The date after which the desired commit should occur
+    :return: The commit sha of the desired module repo commit
+    """
     module = get_evg_module_for_project(evg_api, project, module_name)
     module_repo = init_repo(temp_dir, module.repo, module.branch, module.owner)
     module_commit = None
@@ -78,6 +97,14 @@ def get_module_commit_on_date(
 
 
 def get_version_on_date(evg_api: EvergreenApi, project: str, after_date: datetime):
+    """
+    Fetch the earliest Evergreen version that comes after a given after_date.
+
+    :param evg_api: An instance of the evg_api client
+    :param project: The name of the evergreen project to analyze
+    :param after_date: The date after which the desired commit should occur
+    :return: The version_id of the desired version
+    """
     project_versions = evg_api.versions_by_project_time_window(
         project, datetime.utcnow(), after_date
     )

@@ -75,11 +75,26 @@ def _process_one_test_mapping_work_item(
     """
     log = LOGGER.bind(project=work_item.project, module=work_item.module)
     log.info("Starting test mapping work item processing for work_item")
-    if _run_create_test_mappings(evg_api, mongo, work_item, after_date, log):
+    if _seed_test_mappings_for_project(evg_api, mongo, work_item, after_date, log):
         work_item.complete(mongo.test_mappings_queue())
 
 
-def _run_create_test_mappings(
+def _add_project_to_test_mappings_config(mongo, work_item, test_mappings_result):
+    mongo.test_mappings_project_config().insert_one(
+        {
+            "project": work_item.project,
+            "most_recent_project_commit_analyzed": test_mappings_result.most_recent_project_commit_analyzed,
+            "source_re": work_item.source_file_regex,
+            "test_re": work_item.test_file_regex,
+            "module": work_item.module,
+            "most_recent_module_commit_analyzed": test_mappings_result.most_recent_module_commit_analyzed,
+            "module_source_re": work_item.module_source_file_regex,
+            "module_test_re": work_item.module_test_file_regex,
+        }
+    )
+
+
+def _seed_test_mappings_for_project(
     evg_api: EvergreenApi,
     mongo: MongoWrapper,
     work_item: ProjectTestMappingWorkItem,
@@ -113,6 +128,7 @@ def _run_create_test_mappings(
         module_source_re=module_source_re,
         module_test_re=module_test_re,
     )
+    _add_project_to_test_mappings_config(mongo, work_item, test_mappings_result)
     if test_mappings_result.test_mappings_list:
         mongo.test_mappings().insert_many(test_mappings_result.test_mappings_list)
     else:
@@ -120,3 +136,54 @@ def _run_create_test_mappings(
     log.info("Finished test mapping work item processing")
 
     return True
+
+
+def _update_test_mappings_config(mongo, project, test_mappings_result):
+    mongo.test_mappings_project_config().update_one(
+        {"project": project},
+        {
+            "$set": {
+                "most_recent_project_commit_analyzed": test_mappings_result.most_recent_project_commit_analyzed,
+                "most_recent_module_commit_analyzed": test_mappings_result.most_recent_module_commit_analyzed,
+            }
+        },
+    )
+
+
+def update_test_mappings_since_last_commit(evg_api: EvergreenApi, mongo: MongoWrapper):
+    """
+    Update test mappings that are being tracked in the test mappings project config collection.
+    :param evg_api: An instance of the evg_api client
+    :param mongo: An instance of MongoWrapper.
+    """
+    LOGGER.info("Updating test mappings")
+    project_cursor = mongo.test_mappings_project_config().find({})
+    for project_config in project_cursor:
+        LOGGER.info("Updating test mappings for project", project_config=project_config)
+        source_re = re.compile(project_config["source_re"])
+        test_re = re.compile(project_config["test_re"])
+        module_source_re = None
+        module_test_re = None
+        if project_config["module"]:
+            module_source_re = re.compile(project_config["module_source_re"])
+            module_test_re = re.compile(project_config["module_test_re"])
+
+        test_mappings_result = generate_test_mappings(
+            evg_api,
+            project_config["project"],
+            CommitLimit(stop_at_commit_sha=project_config["most_recent_project_commit_analyzed"]),
+            source_re,
+            test_re,
+            module_name=project_config["module"],
+            module_commit_limit=CommitLimit(
+                stop_at_commit_sha=project_config["most_recent_module_commit_analyzed"]
+            ),
+            module_source_re=module_source_re,
+            module_test_re=module_test_re,
+        )
+        _update_test_mappings_config(mongo, project_config["project"], test_mappings_result)
+        if test_mappings_result.test_mappings_list:
+            mongo.test_mappings().insert_many(test_mappings_result.test_mappings_list)
+        else:
+            LOGGER.info("No test mappings generated")
+    LOGGER.info("Finished test mapping updating")

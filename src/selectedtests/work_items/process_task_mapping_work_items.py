@@ -62,11 +62,11 @@ def _process_one_task_mapping_work_item(
     """
     log = LOGGER.bind(project=work_item.project, module=work_item.module)
     log.info("Starting task mapping work item processing for work_item")
-    if _run_create_task_mappings(evg_api, mongo, work_item, after_date, log):
+    if _seed_task_mappings_for_project(evg_api, mongo, work_item, after_date, log):
         work_item.complete(mongo.task_mappings_queue())
 
 
-def _run_create_task_mappings(
+def _seed_task_mappings_for_project(
     evg_api: EvergreenApi,
     mongo: MongoWrapper,
     work_item: ProjectTaskMappingWorkItem,

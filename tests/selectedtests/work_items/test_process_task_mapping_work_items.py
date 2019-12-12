@@ -56,7 +56,7 @@ class TestGenerateTaskMappingWorkItems:
 
 
 class TestProcessOneTaskMappingWorkItem:
-    @patch(ns("_run_create_task_mappings"))
+    @patch(ns("_seed_task_mappings_for_project"))
     def test_work_items_completed_successfully_are_marked_complete(
         self, run_create_task_mappings_mock
     ):
@@ -71,7 +71,7 @@ class TestProcessOneTaskMappingWorkItem:
 
         work_item_mock.complete.assert_called_once()
 
-    @patch(ns("_run_create_task_mappings"))
+    @patch(ns("_seed_task_mappings_for_project"))
     def test_work_items_completed_unsuccessfully_are_marked_not_complete(
         self, run_create_task_mappings_mock
     ):
@@ -101,7 +101,7 @@ class TestRunCreateTaskMappings:
         logger_mock = MagicMock()
         work_item_mock = MagicMock(source_file_regex="src", module=None)
 
-        under_test._run_create_task_mappings(
+        under_test._seed_task_mappings_for_project(
             evg_api_mock, mongo_mock, work_item_mock, after_date=None, log=logger_mock
         )
 
@@ -123,7 +123,7 @@ class TestRunCreateTaskMappings:
         )
         work_item_mock = MagicMock(source_file_regex="src", module=None)
 
-        under_test._run_create_task_mappings(
+        under_test._seed_task_mappings_for_project(
             evg_api_mock, mongo_mock, work_item_mock, after_date=None, log=logger_mock
         )
 

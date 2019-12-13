@@ -58,10 +58,10 @@ class TestGenerateTaskMappingWorkItems:
 class TestProcessOneTaskMappingWorkItem:
     @patch(ns("_seed_task_mappings_for_project"))
     def test_work_items_completed_successfully_are_marked_complete(
-        self, run_create_task_mappings_mock
+        self, run_generate_task_mappings_mock
     ):
         work_item_mock = MagicMock()
-        run_create_task_mappings_mock.return_value = True
+        run_generate_task_mappings_mock.return_value = True
         evg_api_mock = MagicMock()
         mongo_mock = MagicMock()
 
@@ -73,10 +73,10 @@ class TestProcessOneTaskMappingWorkItem:
 
     @patch(ns("_seed_task_mappings_for_project"))
     def test_work_items_completed_unsuccessfully_are_marked_not_complete(
-        self, run_create_task_mappings_mock
+        self, run_generate_task_mappings_mock
     ):
         work_item_mock = MagicMock()
-        run_create_task_mappings_mock.return_value = False
+        run_generate_task_mappings_mock.return_value = False
         evg_api_mock = MagicMock()
         mongo_mock = MagicMock()
 
@@ -88,12 +88,10 @@ class TestProcessOneTaskMappingWorkItem:
 
 
 class TestRunCreateTaskMappings:
-    @patch(ns("TaskMappings.create_task_mappings"))
-    def test_task_mappings_are_created(self, create_task_mappings_mock):
-        task_mappings_mock = MagicMock()
-        task_mappings_mock.transform.return_value = ["mock-response"]
-        create_task_mappings_mock.return_value = (
-            task_mappings_mock,
+    @patch(ns("generate_task_mappings"))
+    def test_task_mappings_are_created(self, generate_task_mappings_mock):
+        generate_task_mappings_mock.return_value = (
+            ["mock-response"],
             "most-recent-version-analyzed",
         )
         evg_api_mock = MagicMock()
@@ -107,14 +105,9 @@ class TestRunCreateTaskMappings:
 
         mongo_mock.task_mappings.return_value.insert_many.assert_called_once_with(["mock-response"])
 
-    @patch(ns("TaskMappings.create_task_mappings"))
-    def test_no_mappings_are_created(self, create_task_mappings_mock):
-        task_mappings_mock = MagicMock()
-        task_mappings_mock.transform.return_value = []
-        create_task_mappings_mock.return_value = (
-            task_mappings_mock,
-            "most-recent-version-analyzed",
-        )
+    @patch(ns("generate_task_mappings"))
+    def test_no_mappings_are_created(self, generate_task_mappings_mock):
+        generate_task_mappings_mock.return_value = ([], "most-recent-version-analyzed")
         evg_api_mock = MagicMock()
         mongo_mock = MagicMock()
         logger_mock = MagicMock()

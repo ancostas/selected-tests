@@ -1,6 +1,8 @@
 """Method to create the task mappings for a given evergreen project."""
 from __future__ import annotations
 
+import re
+
 from re import match
 from typing import Dict, List, Pattern, Set, Tuple
 
@@ -21,6 +23,37 @@ LOGGER = get_logger(__name__)
 MAX_WORKERS = 32
 SEEN_COUNT_KEY = "seen_count"
 TASK_BUILDS_KEY = "builds"
+
+
+def generate_task_mappings(
+    evg_api: EvergreenApi,
+    evergreen_project: str,
+    version_limit: VersionLimit,
+    source_file_regex: str,
+    module_name: str = None,
+    module_source_file_regex: str = None,
+    build_variant_regex: str = None,
+) -> Tuple[List[Dict], str]:
+    source_re = re.compile(source_file_regex)
+    module_source_re = None
+    if module_name:
+        module_source_re = re.compile(module_source_file_regex)
+
+    build_regex = None
+    if build_variant_regex:
+        build_regex = re.compile(build_variant_regex)
+
+    mappings, most_recent_version_analyzed = TaskMappings.create_task_mappings(
+        evg_api,
+        evergreen_project,
+        version_limit,
+        source_re,
+        module_name=module_name,
+        module_file_regex=module_source_re,
+        build_regex=build_regex,
+    )
+    transformed_mappings = mappings.transform()
+    return transformed_mappings, most_recent_version_analyzed
 
 
 class TaskMappings:

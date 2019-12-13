@@ -1,7 +1,6 @@
 """Functions for processing project test mapping work items."""
 from datetime import datetime
 from typing import Any, Iterable
-import re
 import structlog
 
 from evergreen.api import EvergreenApi

@@ -71,7 +71,7 @@ def _create_project_in_task_mappings_config(mongo, work_item, most_recent_versio
             "project": work_item.project,
             "most_recent_version_analyzed": most_recent_version_analyzed,
             "source_re": work_item.source_file_regex,
-            "build_re": work_item.source_file_regex,
+            "build_re": work_item.build_variant_regex,
             "module": work_item.module,
             "module_source_re": work_item.module_source_file_regex,
         }

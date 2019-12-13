@@ -79,7 +79,7 @@ def _process_one_test_mapping_work_item(
         work_item.complete(mongo.test_mappings_queue())
 
 
-def _add_project_to_test_mappings_config(mongo, work_item, test_mappings_result):
+def _create_project_in_test_mappings_config(mongo, work_item, test_mappings_result):
     mongo.test_mappings_project_config().insert_one(
         {
             "project": work_item.project,
@@ -128,7 +128,7 @@ def _seed_test_mappings_for_project(
         module_source_re=module_source_re,
         module_test_re=module_test_re,
     )
-    _add_project_to_test_mappings_config(mongo, work_item, test_mappings_result)
+    _create_project_in_test_mappings_config(mongo, work_item, test_mappings_result)
     if test_mappings_result.test_mappings_list:
         mongo.test_mappings().insert_many(test_mappings_result.test_mappings_list)
     else:

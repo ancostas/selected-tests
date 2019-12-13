@@ -1,4 +1,6 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import call, MagicMock, patch
+
+from selectedtests.test_mappings.commit_limit import CommitLimit
 from selectedtests.test_mappings.create_test_mappings import TestMappingsResult
 import selectedtests.work_items.process_test_mapping_work_items as under_test
 
@@ -84,6 +86,18 @@ class TestSeedTestMappingsForProject:
             evg_api_mock, mongo_mock, work_item_mock, after_date=None, log=logger_mock
         )
 
+        mongo_mock.test_mappings_project_config.return_value.insert_one.assert_called_once_with(
+            {
+                "project": work_item_mock.project,
+                "most_recent_project_commit_analyzed": "last-project-sha-analyzed",
+                "source_re": work_item_mock.source_file_regex,
+                "test_re": work_item_mock.test_file_regex,
+                "module": work_item_mock.module,
+                "most_recent_module_commit_analyzed": "last-module-sha-analyzed",
+                "module_source_re": work_item_mock.module_source_file_regex,
+                "module_test_re": work_item_mock.module_test_file_regex,
+            }
+        )
         mongo_mock.test_mappings.return_value.insert_many.assert_called_once_with(["mock-mapping"])
 
     @patch(ns("generate_test_mappings"))
@@ -93,8 +107,8 @@ class TestSeedTestMappingsForProject:
         logger_mock = MagicMock()
         generate_test_mappings_mock.return_value = TestMappingsResult(
             test_mappings_list=[],
-            most_recent_project_commit_analyzed=None,
-            most_recent_module_commit_analyzed=None,
+            most_recent_project_commit_analyzed="last-project-sha-analyzed",
+            most_recent_module_commit_analyzed="last-module-sha-analyzed",
         )
         mongo_mock.test_mappings.return_value.insert_many.side_effect = TypeError(
             "documents must be a non-empty list"
@@ -105,4 +119,67 @@ class TestSeedTestMappingsForProject:
             evg_api_mock, mongo_mock, work_item_mock, after_date=None, log=logger_mock
         )
 
+        mongo_mock.test_mappings_project_config.return_value.insert_one.assert_called_once_with(
+            {
+                "project": work_item_mock.project,
+                "most_recent_project_commit_analyzed": "last-project-sha-analyzed",
+                "source_re": work_item_mock.source_file_regex,
+                "test_re": work_item_mock.test_file_regex,
+                "module": work_item_mock.module,
+                "most_recent_module_commit_analyzed": "last-module-sha-analyzed",
+                "module_source_re": work_item_mock.module_source_file_regex,
+                "module_test_re": work_item_mock.module_test_file_regex,
+            }
+        )
         mongo_mock.test_mappings.return_value.insert_many.assert_not_called()
+
+
+class TestUpdateMappingsSinceLastCommit:
+    @patch(ns("generate_test_mappings"))
+    def test_mappings_are_updated(self, generate_test_mappings_mock):
+        evg_api_mock = MagicMock()
+        mongo_mock = MagicMock()
+        # CHECK THIS
+        project_config_list = [
+            {
+                "project": "project-1",
+                "most_recent_project_commit_analyzed": "project-sha-1",
+                "source_re": "^src",
+                "test_re": "^jstests",
+                "module": "module-1",
+                "most_recent_module_commit_analyzed": "module-sha-2",
+                "module_source_re": "^src",
+                "module_test_re": "^jstests",
+            }
+        ]
+        mongo_mock.test_mappings_project_config.return_value.find.return_value = project_config_list
+
+        generate_test_mappings_mock.return_value = TestMappingsResult(
+            test_mappings_list=["mock-mapping"],
+            most_recent_project_commit_analyzed="last-project-sha-analyzed",
+            most_recent_module_commit_analyzed="last-module-sha-analyzed",
+        )
+
+        under_test.update_test_mappings_since_last_commit(evg_api_mock, mongo_mock)
+
+        generate_test_mappings_mock.assert_called_once_with(
+            evg_api_mock,
+            "project-1",
+            CommitLimit(stop_at_commit_sha="project-sha-1"),
+            "^src",
+            "^jstests",
+            module_commit_limit=CommitLimit(stop_at_commit_sha="module-sha-1"),
+            module_name="module-1",
+            module_source_file_regex="^src",
+            module_test_file_regex="^src",
+        )
+        mongo_mock.test_mappings_project_config.return_value.update_one.assert_called_once_with(
+            {"project": "project-1"},
+            {
+                "$set": {
+                    "most_recent_project_commit_analyzed": "last-project-sha-analyzed",
+                    "most_recent_module_commit_analyzed": "last-module-sha-analyzed",
+                }
+            },
+        )
+        mongo_mock.test_mappings.return_value.insert_many.assert_called_once_with(["mock-mapping"])

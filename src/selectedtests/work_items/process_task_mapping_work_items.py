@@ -105,13 +105,15 @@ def _seed_task_mappings_for_project(
     _create_project_in_task_mappings_config(mongo, work_item, most_recent_version_analyzed)
     if mappings:
         mongo.task_mappings().insert_many(mappings)
+    else:
+        LOGGER.info("No task mappings generated")
     log.info("Finished task mapping work item processing")
 
     return True
 
 
 def _update_task_mappings_config(mongo, project, most_recent_version_analyzed):
-    mongo.test_mappings_project_config().update_one(
+    mongo.task_mappings_project_config().update_one(
         {"project": project},
         {"$set": {"most_recent_version_analyzed": most_recent_version_analyzed}},
     )
@@ -142,5 +144,5 @@ def update_task_mappings_since_last_commit(evg_api: EvergreenApi, mongo: MongoWr
         if mappings:
             mongo.task_mappings().insert_many(mappings)
         else:
-            LOGGER.info("No test mappings generated")
-    LOGGER.info("Finished test mapping updating")
+            LOGGER.info("No task mappings generated")
+    LOGGER.info("Finished task mapping updating")

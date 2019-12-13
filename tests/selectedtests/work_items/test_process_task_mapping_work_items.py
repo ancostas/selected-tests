@@ -87,7 +87,7 @@ class TestProcessOneTaskMappingWorkItem:
         work_item_mock.next.return_value.complete.assert_not_called()
 
 
-class TestRunCreateTaskMappings:
+class TestSeedTaskMappingsForProject:
     @patch(ns("generate_task_mappings"))
     def test_task_mappings_are_created(self, generate_task_mappings_mock):
         generate_task_mappings_mock.return_value = (

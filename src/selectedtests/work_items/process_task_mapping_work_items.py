@@ -99,8 +99,8 @@ def _seed_task_mappings_for_project(
         VersionLimit(stop_at_date=after_date),
         work_item.source_file_regex,
         module_name=work_item.module,
-        module_file_regex=work_item.module_source_file_regex,
-        build_regex=work_item.build_variant_regex,
+        module_source_file_regex=work_item.module_source_file_regex,
+        build_variant_regex=work_item.build_variant_regex,
     )
     _create_project_in_task_mappings_config(mongo, work_item, most_recent_version_analyzed)
     if mappings:
@@ -134,8 +134,8 @@ def update_task_mappings_since_last_commit(evg_api: EvergreenApi, mongo: MongoWr
             VersionLimit(stop_at_version_id=project_config["most_recent_version_analyzed"]),
             project_config["source_re"],
             module_name=project_config["module"],
-            module_file_regex=project_config["module_source_re"],
-            build_regex=project_config["build_re"],
+            module_source_file_regex=project_config["module_source_re"],
+            build_variant_regex=project_config["build_re"],
         )
 
         _update_task_mappings_config(mongo, project_config["project"], most_recent_version_analyzed)

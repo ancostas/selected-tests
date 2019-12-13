@@ -67,7 +67,7 @@ class TestProcessOneTestMappingWorkItem:
         work_item_mock.complete.assert_not_called()
 
 
-class TestRunCreateTestMappings:
+class TestSeedTestMappingsForProject:
     @patch(ns("generate_test_mappings"))
     def test_mappings_are_created(self, generate_test_mappings_mock):
         evg_api_mock = MagicMock()

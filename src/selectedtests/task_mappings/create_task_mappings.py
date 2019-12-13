@@ -90,7 +90,10 @@ class TaskMappings:
         :return: An instance of TaskMappings and version_id of the most recent version analyzed.
         """
         log = LOGGER.bind(
-            project=evergreen_project, module=module_name, version_limit=version_limit
+            project=evergreen_project,
+            module=module_name,
+            version_limit_stop_at_date=version_limit.stop_at_date,
+            version_limit_stop_at_version_id=version_limit.stop_at_version_id,
         )
         log.info("Starting to generate task mappings")
         project_versions = evg_api.versions_by_project(evergreen_project)
@@ -114,6 +117,10 @@ class TaskMappings:
                 for next_version, version, prev_version in windowed_iter(project_versions, 3):
                     if not most_recent_version_analyzed:
                         most_recent_version_analyzed = version.version_id
+                        LOGGER.info(
+                            "Calculated most_recent_version_analyzed",
+                            most_recent_version_analyzed=most_recent_version_analyzed,
+                        )
 
                     if version_limit.check_version_before_limit(version):
                         break

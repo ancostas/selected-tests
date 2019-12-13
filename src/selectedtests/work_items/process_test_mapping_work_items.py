@@ -109,24 +109,16 @@ def _seed_test_mappings_for_project(
     :param work_item: An instance of ProjectTestMappingWorkItem.
     :param after_date: The date at which to start analyzing commits of the project.
     """
-    source_re = re.compile(work_item.source_file_regex)
-    test_re = re.compile(work_item.test_file_regex)
-    module_source_re = None
-    module_test_re = None
-    if work_item.module:
-        module_source_re = re.compile(work_item.module_source_file_regex)
-        module_test_re = re.compile(work_item.module_test_file_regex)
-
     test_mappings_result = generate_test_mappings(
         evg_api,
         work_item.project,
         CommitLimit(stop_at_date=after_date),
-        source_re,
-        test_re,
+        work_item.source_file_regex,
+        work_item.test_file_regex,
         module_name=work_item.module,
         module_commit_limit=CommitLimit(stop_at_date=after_date),
-        module_source_re=module_source_re,
-        module_test_re=module_test_re,
+        module_source_re=work_item.module_source_file_regex,
+        module_test_re=work_item.module_test_file_regex,
     )
     _create_project_in_test_mappings_config(mongo, work_item, test_mappings_result)
     if test_mappings_result.test_mappings_list:
@@ -160,26 +152,18 @@ def update_test_mappings_since_last_commit(evg_api: EvergreenApi, mongo: MongoWr
     project_cursor = mongo.test_mappings_project_config().find({})
     for project_config in project_cursor:
         LOGGER.info("Updating test mappings for project", project_config=project_config)
-        source_re = re.compile(project_config["source_re"])
-        test_re = re.compile(project_config["test_re"])
-        module_source_re = None
-        module_test_re = None
-        if project_config["module"]:
-            module_source_re = re.compile(project_config["module_source_re"])
-            module_test_re = re.compile(project_config["module_test_re"])
-
         test_mappings_result = generate_test_mappings(
             evg_api,
             project_config["project"],
             CommitLimit(stop_at_commit_sha=project_config["most_recent_project_commit_analyzed"]),
-            source_re,
-            test_re,
+            project_config["source_re"],
+            project_config["test_re"],
             module_name=project_config["module"],
             module_commit_limit=CommitLimit(
                 stop_at_commit_sha=project_config["most_recent_module_commit_analyzed"]
             ),
-            module_source_re=module_source_re,
-            module_test_re=module_test_re,
+            module_source_re=project_config["module_source_re"],
+            module_test_re=project_config["module_source_re"],
         )
         _update_test_mappings_config(mongo, project_config["project"], test_mappings_result)
         if test_mappings_result.test_mappings_list:

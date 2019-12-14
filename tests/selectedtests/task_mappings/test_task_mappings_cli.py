@@ -51,7 +51,7 @@ class TestCli:
     def test_invalid_dates(self, generate_task_mappings_mock, get_evg_api_mock):
         mock_get_evg_api_mock = MagicMock()
         get_evg_api_mock.return_value = mock_get_evg_api_mock
-        generate_task_mappings_mock.return_value = "mock-response"
+        generate_task_mappings_mock.return_value = ([], "most-recent-sha-analyzed")
 
         runner = CliRunner()
         with runner.isolated_filesystem():
@@ -83,7 +83,7 @@ class TestCli:
     def test_module_regexes_not_passed_in(self, generate_task_mappings_mock, get_evg_api_mock):
         mock_get_evg_api_mock = MagicMock()
         get_evg_api_mock.return_value = mock_get_evg_api_mock
-        generate_task_mappings_mock.return_value = ("mock-response", "most-recent-sha-analyzed")
+        generate_task_mappings_mock.return_value = ([], "most-recent-sha-analyzed")
 
         runner = CliRunner()
         with runner.isolated_filesystem():

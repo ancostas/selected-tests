@@ -1,6 +1,5 @@
-from unittest.mock import call, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
-from selectedtests.test_mappings.commit_limit import CommitLimit
 from selectedtests.test_mappings.create_test_mappings import TestMappingsResult
 import selectedtests.work_items.process_test_mapping_work_items as under_test
 
@@ -101,7 +100,7 @@ class TestSeedTestMappingsForProject:
         mongo_mock.test_mappings.return_value.insert_many.assert_called_once_with(["mock-mapping"])
 
     @patch(ns("generate_test_mappings"))
-    def test_no_mappings_are_created(self, generate_test_mappings_mock):
+    def test_no_test_mappings_are_created(self, generate_test_mappings_mock):
         evg_api_mock = MagicMock()
         mongo_mock = MagicMock()
         logger_mock = MagicMock()
@@ -134,12 +133,14 @@ class TestSeedTestMappingsForProject:
         mongo_mock.test_mappings.return_value.insert_many.assert_not_called()
 
 
-class TestUpdateMappingsSinceLastCommit:
+class TestUpdateTestMappingsSinceLastCommit:
     @patch(ns("generate_test_mappings"))
-    def test_mappings_are_updated(self, generate_test_mappings_mock):
+    @patch(ns("CommitLimit"))
+    def test_mappings_are_updated(self, commit_limit_mock, generate_test_mappings_mock):
         evg_api_mock = MagicMock()
         mongo_mock = MagicMock()
-        # CHECK THIS
+        my_commit_limit = MagicMock()
+        commit_limit_mock.return_value = my_commit_limit
         project_config_list = [
             {
                 "project": "project-1",
@@ -153,7 +154,6 @@ class TestUpdateMappingsSinceLastCommit:
             }
         ]
         mongo_mock.test_mappings_project_config.return_value.find.return_value = project_config_list
-
         generate_test_mappings_mock.return_value = TestMappingsResult(
             test_mappings_list=["mock-mapping"],
             most_recent_project_commit_analyzed="last-project-sha-analyzed",
@@ -165,10 +165,10 @@ class TestUpdateMappingsSinceLastCommit:
         generate_test_mappings_mock.assert_called_once_with(
             evg_api_mock,
             "project-1",
-            CommitLimit(stop_at_commit_sha="project-sha-1"),
+            my_commit_limit,
             "^src",
             "^jstests",
-            module_commit_limit=CommitLimit(stop_at_commit_sha="module-sha-1"),
+            module_commit_limit=my_commit_limit,
             module_name="module-1",
             module_source_file_regex="^src",
             module_test_file_regex="^src",

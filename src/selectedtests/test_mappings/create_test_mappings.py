@@ -54,8 +54,6 @@ def generate_test_mappings(
         module=module_name,
         project_commit_limit_stop_at_date=project_commit_limit.stop_at_date,
         project_commit_limit_stop_at_commit_sha=project_commit_limit.stop_at_commit_sha,
-        module_commit_limit_stop_at_date=module_commit_limit.stop_at_date,
-        module_commit_limit_stop_at_commit_sha=module_commit_limit.stop_at_commit_sha,
     )
     log.info("Starting to generate test mappings")
 

@@ -66,7 +66,7 @@ def _process_one_task_mapping_work_item(
 
 
 def _create_project_in_task_mappings_config(mongo, work_item, most_recent_version_analyzed):
-    mongo.test_mappings_project_config().insert_one(
+    mongo.task_mappings_project_config().insert_one(
         {
             "project": work_item.project,
             "most_recent_version_analyzed": most_recent_version_analyzed,

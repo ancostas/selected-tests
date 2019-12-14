@@ -146,6 +146,7 @@ def _update_test_mappings_config(mongo, project, test_mappings_result):
 def update_test_mappings_since_last_commit(evg_api: EvergreenApi, mongo: MongoWrapper):
     """
     Update test mappings that are being tracked in the test mappings project config collection.
+
     :param evg_api: An instance of the evg_api client
     :param mongo: An instance of MongoWrapper.
     """

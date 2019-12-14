@@ -34,6 +34,18 @@ def generate_task_mappings(
     module_source_file_regex: str = None,
     build_variant_regex: str = None,
 ) -> Tuple[List[Dict], str]:
+    """
+    Generate task mappings for an evergreen project and its associated module if module is provided.
+
+    :param evg_api: An instance of the evg_api client.
+    :param evergreen_project: The name of the evergreen project to analyze.
+    :param version_limit: The point in time at which to start analyzing versions of the project.
+    :param source_file_regex: Pattern to match changed source files against.
+    :param module_name: The name of the module to analyze.
+    :param module_source_file_regex: Pattern to match changed module source files against.
+    :param build_variant_regex: Pattern to match build variant names against. Defaults to None.
+    :return: An instance of TestMappingsResult.
+    """
     source_re = re.compile(source_file_regex)
     module_source_re = None
     if module_name:

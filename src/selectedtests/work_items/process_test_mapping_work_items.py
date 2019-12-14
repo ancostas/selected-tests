@@ -79,14 +79,15 @@ def _process_one_test_mapping_work_item(
 
 
 def _create_project_in_test_mappings_config(mongo, work_item, test_mappings_result):
+    result = test_mappings_result
     mongo.test_mappings_project_config().insert_one(
         {
             "project": work_item.project,
-            "most_recent_project_commit_analyzed": test_mappings_result.most_recent_project_commit_analyzed,
+            "most_recent_project_commit_analyzed": result.most_recent_project_commit_analyzed,
             "source_re": work_item.source_file_regex,
             "test_re": work_item.test_file_regex,
             "module": work_item.module,
-            "most_recent_module_commit_analyzed": test_mappings_result.most_recent_module_commit_analyzed,
+            "most_recent_module_commit_analyzed": result.most_recent_module_commit_analyzed,
             "module_source_re": work_item.module_source_file_regex,
             "module_test_re": work_item.module_test_file_regex,
         }
@@ -130,12 +131,13 @@ def _seed_test_mappings_for_project(
 
 
 def _update_test_mappings_config(mongo, project, test_mappings_result):
+    result = test_mappings_result
     mongo.test_mappings_project_config().update_one(
         {"project": project},
         {
             "$set": {
-                "most_recent_project_commit_analyzed": test_mappings_result.most_recent_project_commit_analyzed,
-                "most_recent_module_commit_analyzed": test_mappings_result.most_recent_module_commit_analyzed,
+                "most_recent_project_commit_analyzed": result.most_recent_project_commit_analyzed,
+                "most_recent_module_commit_analyzed": result.most_recent_module_commit_analyzed,
             }
         },
     )

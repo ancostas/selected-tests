@@ -3,7 +3,6 @@ import click
 import json
 import logging
 import pytz
-import re
 import structlog
 
 from datetime import datetime

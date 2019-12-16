@@ -89,12 +89,12 @@ class TestSeedTestMappingsForProject:
             {
                 "project": work_item_mock.project,
                 "most_recent_project_commit_analyzed": "last-project-sha-analyzed",
-                "source_re": work_item_mock.source_file_regex,
-                "test_re": work_item_mock.test_file_regex,
+                "source_file_regex": work_item_mock.source_file_regex,
+                "test_file_regex": work_item_mock.test_file_regex,
                 "module": work_item_mock.module,
                 "most_recent_module_commit_analyzed": "last-module-sha-analyzed",
-                "module_source_re": work_item_mock.module_source_file_regex,
-                "module_test_re": work_item_mock.module_test_file_regex,
+                "module_source_file_regex": work_item_mock.module_source_file_regex,
+                "module_test_file_regex": work_item_mock.module_test_file_regex,
             }
         )
         mongo_mock.test_mappings.return_value.insert_many.assert_called_once_with(["mock-mapping"])
@@ -122,12 +122,12 @@ class TestSeedTestMappingsForProject:
             {
                 "project": work_item_mock.project,
                 "most_recent_project_commit_analyzed": "last-project-sha-analyzed",
-                "source_re": work_item_mock.source_file_regex,
-                "test_re": work_item_mock.test_file_regex,
+                "source_file_regex": work_item_mock.source_file_regex,
+                "test_file_regex": work_item_mock.test_file_regex,
                 "module": work_item_mock.module,
                 "most_recent_module_commit_analyzed": "last-module-sha-analyzed",
-                "module_source_re": work_item_mock.module_source_file_regex,
-                "module_test_re": work_item_mock.module_test_file_regex,
+                "module_source_file_regex": work_item_mock.module_source_file_regex,
+                "module_test_file_regex": work_item_mock.module_test_file_regex,
             }
         )
         mongo_mock.test_mappings.return_value.insert_many.assert_not_called()

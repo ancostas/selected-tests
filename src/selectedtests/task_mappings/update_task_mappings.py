@@ -32,10 +32,10 @@ def update_task_mappings_since_last_commit(evg_api: EvergreenApi, mongo: MongoWr
             evg_api,
             project_config["project"],
             VersionLimit(stop_at_version_id=project_config["most_recent_version_analyzed"]),
-            project_config["source_re"],
+            project_config["source_file_regex"],
             module_name=project_config["module"],
-            module_source_file_pattern=project_config["module_source_re"],
-            build_variant_pattern=project_config["build_re"],
+            module_source_file_pattern=project_config["module_source_file_regex"],
+            build_variant_pattern=project_config["build_variant_regex"],
         )
 
         _update_task_mappings_config(mongo, project_config["project"], most_recent_version_analyzed)

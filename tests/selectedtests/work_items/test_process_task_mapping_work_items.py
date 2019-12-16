@@ -108,10 +108,10 @@ class TestSeedTaskMappingsForProject:
             {
                 "project": work_item_mock.project,
                 "most_recent_version_analyzed": "most-recent-version-analyzed",
-                "source_re": work_item_mock.source_file_regex,
-                "build_re": work_item_mock.build_variant_regex,
+                "source_file_regex": work_item_mock.source_file_regex,
+                "build_variant_regex": work_item_mock.build_variant_regex,
                 "module": work_item_mock.module,
-                "module_source_re": work_item_mock.module_source_file_regex,
+                "module_source_file_regex": work_item_mock.module_source_file_regex,
             }
         )
         mongo_mock.task_mappings.return_value.insert_many.assert_called_once_with(["mock-response"])
@@ -135,10 +135,10 @@ class TestSeedTaskMappingsForProject:
             {
                 "project": work_item_mock.project,
                 "most_recent_version_analyzed": "most-recent-version-analyzed",
-                "source_re": work_item_mock.source_file_regex,
-                "build_re": work_item_mock.build_variant_regex,
+                "source_file_regex": work_item_mock.source_file_regex,
+                "build_variant_regex": work_item_mock.build_variant_regex,
                 "module": work_item_mock.module,
-                "module_source_re": work_item_mock.module_source_file_regex,
+                "module_source_file_regex": work_item_mock.module_source_file_regex,
             }
         )
         mongo_mock.task_mappings.return_value.insert_many.assert_not_called()

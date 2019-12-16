@@ -23,10 +23,10 @@ class TestUpdateTaskMappingsSinceLastCommit:
             {
                 "project": "project-1",
                 "most_recent_version_analyzed": "version-1",
-                "source_re": "^src",
-                "build_re": "^!",
+                "source_file_regex": "^src",
+                "build_variant_regex": "^!",
                 "module": "module-1",
-                "module_source_re": "^src",
+                "module_source_file_regex": "^src",
             }
         ]
         mongo_mock.task_mappings_project_config.return_value.find.return_value = project_config_list

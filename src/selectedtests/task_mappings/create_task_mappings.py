@@ -313,7 +313,7 @@ def _map_tasks_to_files(changed_files: List[str], flipped_tasks: Dict, task_mapp
         task_mappings_for_file[SEEN_COUNT_KEY] = task_mappings_for_file[SEEN_COUNT_KEY] + 1
         build_mappings = task_mappings_for_file[TASK_BUILDS_KEY]
         for build_name in flipped_tasks:
-            builds_to_task_mappings: Dict[str:Dict] = build_mappings.setdefault(build_name, {})
+            builds_to_task_mappings: Dict[str, Dict] = build_mappings.setdefault(build_name, {})
             for cur_task in flipped_tasks.get(build_name):
                 cur_flips_for_task = builds_to_task_mappings.setdefault(cur_task, 0)
                 builds_to_task_mappings[cur_task] = cur_flips_for_task + 1

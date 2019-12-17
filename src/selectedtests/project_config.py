@@ -1,4 +1,5 @@
 import json
+import pdb
 
 from pymongo.collection import Collection
 
@@ -6,11 +7,11 @@ from pymongo.collection import Collection
 class TaskConfig:
     def __init__(
         self,
-        most_recent_version_analyzed,
-        source_file_regex,
-        build_variant_regex,
-        module,
-        module_source_file_regex,
+        most_recent_version_analyzed=None,
+        source_file_regex=None,
+        build_variant_regex=None,
+        module=None,
+        module_source_file_regex=None,
     ):
         self.most_recent_version_analyzed = most_recent_version_analyzed
         self.source_file_regex = source_file_regex
@@ -49,13 +50,13 @@ class TaskConfig:
 class TestConfig:
     def __init__(
         self,
-        most_recent_project_commit_analyzed,
-        source_file_regex,
-        test_file_regex,
-        module,
-        most_recent_module_commit_analyzed,
-        module_source_file_regex,
-        module_test_file_regex,
+        most_recent_project_commit_analyzed=None,
+        source_file_regex=None,
+        test_file_regex=None,
+        module=None,
+        most_recent_module_commit_analyzed=None,
+        module_source_file_regex=None,
+        module_test_file_regex=None,
     ):
         self.most_recent_project_commit_analyzed = most_recent_project_commit_analyzed
         self.source_file_regex = source_file_regex
@@ -103,28 +104,30 @@ class TestConfig:
 
 
 class ProjectConfig:
-    def __init__(self, project, task_config: TaskConfig = None, test_config: TestConfig = None):
+    def __init__(self, project, task_config: TaskConfig, test_config: TestConfig):
         self.project = project
         self.task_config = task_config
         self.test_config = test_config
 
     @classmethod
     def get(cls, collection: Collection, project):
-        data = collection.find({"project": project})
+        data = collection.find_one({"project": project})
         if data:
             return cls(
                 project,
                 TaskConfig.from_json(data.get("task_config")),
                 TestConfig.from_json(data.get("test_config")),
             )
-        return cls(project)
+        return cls(project, TaskConfig(), TestConfig())
 
     def save(self, collection):
-        self.collection.update(
+        collection.update(
             {"project": self.project},
             {
-                "task_config": json.dumps(self.task_config.__dict__),
-                "test_config": json.dumps(self.test_config.__dict__),
+                "$set": {
+                    "task_config": self.task_config.__dict__,
+                    "test_config": self.test_config.__dict__,
+                }
             },
-            True,
+            upsert=True,
         )

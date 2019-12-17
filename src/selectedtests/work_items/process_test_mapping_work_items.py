@@ -116,7 +116,7 @@ def _seed_test_mappings_for_project(
         work_item.module_source_file_regex,
         work_item.module_test_file_regex,
     )
-    project_config.save
+    project_config.save(mongo.project_config())
 
     if test_mappings_result.test_mappings_list:
         mongo.test_mappings().insert_many(test_mappings_result.test_mappings_list)

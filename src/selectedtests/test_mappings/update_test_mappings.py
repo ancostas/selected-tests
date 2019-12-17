@@ -41,7 +41,7 @@ def update_test_mappings_since_last_commit(evg_api: EvergreenApi, mongo: MongoWr
             test_mappings_result.most_recent_project_commit_analyzed,
             test_mappings_result.most_recent_module_commit_analyzed,
         )
-        project_config.save
+        project_config.save(mongo.project_config())
 
         if test_mappings_result.test_mappings_list:
             mongo.test_mappings().insert_many(test_mappings_result.test_mappings_list)

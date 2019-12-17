@@ -99,7 +99,7 @@ def _seed_task_mappings_for_project(
         work_item.module,
         work_item.module_source_file_regex,
     )
-    project_config.save
+    project_config.save(mongo.project_config())
 
     if mappings:
         mongo.task_mappings().insert_many(mappings)

@@ -117,12 +117,3 @@ class ProjectConfig:
         self.test_config.most_recent_module_commit_analyzed = most_recent_module_commit_analyzed
         self.test_config.module_source_file_regex = module_source_file_regex
         self.test_config.module_test_file_regex = module_test_file_regex
-
-    def update_most_recent_version_analyzed(self, most_recent_version_analyzed):
-        self.task_config.most_recent_version_analyzed = most_recent_version_analyzed
-
-    def update_most_recent_commits_analyzed(
-        self, most_recent_project_commit_analyzed, most_recent_module_commit_analyzed
-    ):
-        self.test_config.most_recent_project_commit_analyzed = most_recent_project_commit_analyzed
-        self.test_config.most_recent_module_commit_analyzed = most_recent_module_commit_analyzed

@@ -37,9 +37,14 @@ def update_test_mappings_since_last_commit(evg_api: EvergreenApi, mongo: MongoWr
         )
 
         project_config = ProjectConfig.get(mongo.project_config(), project_config["project"])
-        project_config.update_most_recent_commits_analyzed(
+        project_config.update_test_config(
             test_mappings_result.most_recent_project_commit_analyzed,
+            project_config.test_config.source_file_regex,
+            project_config.test_config.test_file_regex,
+            project_config.test_config.module,
             test_mappings_result.most_recent_module_commit_analyzed,
+            project_config.test_config.module_source_file_regex,
+            project_config.test_config.module_test_file_regex,
         )
         project_config.save
 

@@ -92,7 +92,7 @@ def _seed_task_mappings_for_project(
     )
 
     project_config = ProjectConfig.get(mongo.project_config(), work_item.project)
-    project_config.update_task_config(
+    project_config.task_config.update(
         most_recent_version_analyzed,
         work_item.source_file_regex,
         work_item.build_variant_regex,

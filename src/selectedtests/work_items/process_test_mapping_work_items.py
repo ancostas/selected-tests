@@ -107,7 +107,7 @@ def _seed_test_mappings_for_project(
     )
 
     project_config = ProjectConfig.get(mongo.project_config(), work_item.project)
-    project_config.update_test_config(
+    project_config.test_config.update(
         test_mappings_result.most_recent_project_commit_analyzed,
         work_item.source_file_regex,
         work_item.test_file_regex,

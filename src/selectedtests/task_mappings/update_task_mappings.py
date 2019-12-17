@@ -33,7 +33,7 @@ def update_task_mappings_since_last_commit(evg_api: EvergreenApi, mongo: MongoWr
         )
 
         project_config = ProjectConfig.get(mongo.project_config(), project_config["project"])
-        project_config.update_most_recent_version_analyzed(most_recent_version_analyzed)
+        project_config.task_config.update_most_recent_version_analyzed(most_recent_version_analyzed)
         project_config.save
 
         if mappings:

@@ -1,3 +1,5 @@
+import json
+
 from pymongo.collection import Collection
 
 
@@ -15,6 +17,33 @@ class TaskConfig:
         self.build_variant_regex = build_variant_regex
         self.module = module
         self.module_source_file_regex = module_source_file_regex
+
+    @classmethod
+    def from_json(cls, json):
+        return cls(
+            json.get("most_recent_version_analyzed", None),
+            json.get("source_file_regex", None),
+            json.get("build_variant_regex", None),
+            json.get("module", None),
+            json.get("module_source_file_regex", None),
+        )
+
+    def update(
+        self,
+        most_recent_version_analyzed,
+        source_file_regex,
+        build_variant_regex,
+        module,
+        module_source_file_regex,
+    ):
+        self.most_recent_version_analyzed = most_recent_version_analyzed
+        self.source_file_regex = source_file_regex
+        self.build_variant_regex = build_variant_regex
+        self.module = module
+        self.module_source_file_regex = module_source_file_regex
+
+    def update_most_recent_version_analyzed(self, most_recent_version_analyzed):
+        self.most_recent_version_analyzed = most_recent_version_analyzed
 
 
 class TestConfig:
@@ -36,6 +65,42 @@ class TestConfig:
         self.module_source_file_regex = module_source_file_regex
         self.module_test_file_regex = module_test_file_regex
 
+    @classmethod
+    def from_json(cls, json):
+        return cls(
+            json.get("most_recent_project_commit_analyzed", None),
+            json.get("source_file_regex", None),
+            json.get("test_file_regex", None),
+            json.get("module", None),
+            json.get("most_recent_module_commit_analyzed", None),
+            json.get("module_source_file_regex", None),
+            json.get("module_test_file_regex", None),
+        )
+
+    def update(
+        self,
+        most_recent_project_commit_analyzed,
+        source_file_regex,
+        test_file_regex,
+        module,
+        most_recent_module_commit_analyzed,
+        module_source_file_regex,
+        module_test_file_regex,
+    ):
+        self.most_recent_project_commit_analyzed = most_recent_project_commit_analyzed
+        self.source_file_regex = source_file_regex
+        self.test_file_regex = test_file_regex
+        self.module = module
+        self.most_recent_module_commit_analyzed = most_recent_module_commit_analyzed
+        self.module_source_file_regex = module_source_file_regex
+        self.module_test_file_regex = module_test_file_regex
+
+    def update_most_recent_commits_analyzed(
+        self, most_recent_project_commit_analyzed, most_recent_module_commit_analyzed
+    ):
+        self.most_recent_project_commit_analyzed = most_recent_project_commit_analyzed
+        self.most_recent_module_commit_analyzed = most_recent_module_commit_analyzed
+
 
 class ProjectConfig:
     def __init__(self, project, task_config: TaskConfig = None, test_config: TestConfig = None):
@@ -47,82 +112,19 @@ class ProjectConfig:
     def get(cls, collection: Collection, project):
         data = collection.find({"project": project})
         if data:
-            task_config = TaskConfig(
-                data.get("task_config.most_recent_version_analyzed", None),
-                data.get("task_config.source_file_regex", None),
-                data.get("task_config.build_variant_regex", None),
-                data.get("task_config.module", None),
-                data.get("task_config.module_source_file_regex", None),
+            return cls(
+                project,
+                TaskConfig.from_json(data.get("task_config")),
+                TestConfig.from_json(data.get("test_config")),
             )
-            test_config = TestConfig(
-                data.get("task_config.most_recent_project_commit_analyzed", None),
-                data.get("task_config.source_file_regex", None),
-                data.get("task_config.test_file_regex", None),
-                data.get("task_config.module", None),
-                data.get("task_config.most_recent_module_commit_analyzed", None),
-                data.get("task_config.module_source_file_regex", None),
-                data.get("task_config.module_test_file_regex", None),
-            )
-            return cls(project, task_config, test_config)
         return cls(project)
 
     def save(self, collection):
         self.collection.update(
             {"project": self.project},
             {
-                "task_config.most_recent_version_analyzed": self.task_config.most_recent_version_analyzed,
-                "task_config.source_file_regex": self.task_config.source_file_regex,
-                "task_config.build_variant_regex": self.task_config.build_variant_regex,
-                "task_config.module": self.task_config.module,
-                "task_config.module_source_file_regex": self.task_config.module_source_file_regex,
-                "test_config.most_recent_project_commit_analyzed": self.test_config.most_recent_project_commit_analyzed,
-                "test_config.source_file_regex": self.test_config.source_file_regex,
-                "test_config.test_file_regex": self.test_config.test_file_regex,
-                "test_config.module": self.test_config.module,
-                "test_config.most_recent_module_commit_analyzed": self.test_config.most_recent_module_commit_analyzed,
-                "test_config.module_source_file_regex": self.test_config.module_source_file_regex,
-                "test_config.module_test_file_regex": self.test_config.module_test_file_regex,
+                "task_config": json.dumps(self.task_config.__dict__),
+                "test_config": json.dumps(self.test_config.__dict__),
             },
             True,
         )
-
-    def update_task_config(
-        self,
-        most_recent_version_analyzed,
-        source_file_regex,
-        build_variant_regex,
-        module,
-        module_source_file_regex,
-    ):
-        self.task_config.most_recent_version_analyzed = most_recent_version_analyzed
-        self.task_config.source_file_regex = source_file_regex
-        self.task_config.build_variant_regex = build_variant_regex
-        self.task_config.module = module
-        self.task_config.module_source_file_regex = module_source_file_regex
-
-    def update_test_config(
-        self,
-        most_recent_project_commit_analyzed,
-        source_file_regex,
-        test_file_regex,
-        module,
-        most_recent_module_commit_analyzed,
-        module_source_file_regex,
-        module_test_file_regex,
-    ):
-        self.test_config.most_recent_project_commit_analyzed = most_recent_project_commit_analyzed
-        self.test_config.source_file_regex = source_file_regex
-        self.test_config.test_file_regex = test_file_regex
-        self.test_config.module = module
-        self.test_config.most_recent_module_commit_analyzed = most_recent_module_commit_analyzed
-        self.test_config.module_source_file_regex = module_source_file_regex
-        self.test_config.module_test_file_regex = module_test_file_regex
-
-    def update_most_recent_version_analyzed(self, most_recent_version_analyzed):
-        self.task_config.most_recent_version_analyzed = most_recent_version_analyzed
-
-    def update_most_recent_commits_analyzed(
-        self, most_recent_project_commit_analyzed, most_recent_module_commit_analyzed
-    ):
-        self.test_config.most_recent_project_commit_analyzed = most_recent_project_commit_analyzed
-        self.test_config.most_recent_module_commit_analyzed = most_recent_module_commit_analyzed

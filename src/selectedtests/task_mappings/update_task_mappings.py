@@ -32,9 +32,10 @@ def update_task_mappings_since_last_commit(evg_api: EvergreenApi, mongo: MongoWr
             build_variant_pattern=project_config["build_variant_regex"],
         )
 
-        ProjectConfig(
-            project_config["project"], mongo.project_config()
-        ).update_most_recent_version_analyzed(most_recent_version_analyzed)
+        project_config = ProjectConfig.get(mongo.project_config(), project_config["project"])
+        project_config.update_most_recent_version_analyzed(most_recent_version_analyzed)
+        project_config.save
+
         if mappings:
             mongo.task_mappings().insert_many(mappings)
         else:

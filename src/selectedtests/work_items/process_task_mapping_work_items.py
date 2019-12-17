@@ -90,13 +90,17 @@ def _seed_task_mappings_for_project(
         module_source_file_pattern=work_item.module_source_file_regex,
         build_variant_pattern=work_item.build_variant_regex,
     )
-    ProjectConfig(work_item.project, mongo.project_config()).create_task_config(
+
+    project_config = ProjectConfig.get(mongo.project_config(), work_item.project)
+    project_config.update_task_config(
         most_recent_version_analyzed,
         work_item.source_file_regex,
         work_item.build_variant_regex,
         work_item.module,
         work_item.module_source_file_regex,
     )
+    project_config.save
+
     if mappings:
         mongo.task_mappings().insert_many(mappings)
     else:

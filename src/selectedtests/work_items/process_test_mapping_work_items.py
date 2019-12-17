@@ -105,7 +105,9 @@ def _seed_test_mappings_for_project(
         module_source_file_pattern=work_item.module_source_file_regex,
         module_test_file_pattern=work_item.module_test_file_regex,
     )
-    ProjectConfig(work_item.project, mongo.project_config()).create_test_config(
+
+    project_config = ProjectConfig.get(mongo.project_config(), work_item.project)
+    project_config.update_test_config(
         test_mappings_result.most_recent_project_commit_analyzed,
         work_item.source_file_regex,
         work_item.test_file_regex,
@@ -114,6 +116,8 @@ def _seed_test_mappings_for_project(
         work_item.module_source_file_regex,
         work_item.module_test_file_regex,
     )
+    project_config.save
+
     if test_mappings_result.test_mappings_list:
         mongo.test_mappings().insert_many(test_mappings_result.test_mappings_list)
     else:

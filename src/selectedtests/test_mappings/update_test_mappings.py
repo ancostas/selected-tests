@@ -35,15 +35,14 @@ def update_test_mappings_since_last_commit(evg_api: EvergreenApi, mongo: MongoWr
             module_source_file_pattern=project_config["module_source_file_regex"],
             module_test_file_pattern=project_config["module_source_file_regex"],
         )
-        most_recent_project_commit_analyzed = (
-            test_mappings_result.most_recent_project_commit_analyzed
+
+        project_config = ProjectConfig.get(mongo.project_config(), project_config["project"])
+        project_config.update_most_recent_commits_analyzed(
+            test_mappings_result.most_recent_project_commit_analyzed,
+            test_mappings_result.most_recent_module_commit_analyzed,
         )
-        most_recent_module_commit_analyzed = test_mappings_result.most_recent_module_commit_analyzed
-        ProjectConfig(
-            project_config["project"], mongo.project_config()
-        ).update_most_recent_commits_analyzed(
-            most_recent_project_commit_analyzed, most_recent_module_commit_analyzed
-        )
+        project_config.save
+
         if test_mappings_result.test_mappings_list:
             mongo.test_mappings().insert_many(test_mappings_result.test_mappings_list)
         else:

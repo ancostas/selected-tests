@@ -1,6 +1,3 @@
-import json
-import pdb
-
 from pymongo.collection import Collection
 
 

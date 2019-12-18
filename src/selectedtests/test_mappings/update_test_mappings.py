@@ -19,21 +19,22 @@ def update_test_mappings_since_last_commit(evg_api: EvergreenApi, mongo: MongoWr
     :param mongo: An instance of MongoWrapper.
     """
     LOGGER.info("Updating test mappings")
-    project_cursor = mongo.test_mappings_project_config().find({})
+    project_cursor = mongo.project_config().find({})
     for project_config in project_cursor:
         LOGGER.info("Updating test mappings for project", project_config=project_config)
+        test_config = project_config["test_config"]
         test_mappings_result = generate_test_mappings(
             evg_api,
             project_config["project"],
-            CommitLimit(stop_at_commit_sha=project_config["most_recent_project_commit_analyzed"]),
-            project_config["source_file_regex"],
-            project_config["test_file_regex"],
-            module_name=project_config["module"],
+            CommitLimit(stop_at_commit_sha=test_config["most_recent_project_commit_analyzed"]),
+            test_config["source_file_regex"],
+            test_config["test_file_regex"],
+            module_name=test_config["module"],
             module_commit_limit=CommitLimit(
-                stop_at_commit_sha=project_config["most_recent_module_commit_analyzed"]
+                stop_at_commit_sha=test_config["most_recent_module_commit_analyzed"]
             ),
-            module_source_file_pattern=project_config["module_source_file_regex"],
-            module_test_file_pattern=project_config["module_source_file_regex"],
+            module_source_file_pattern=test_config["module_source_file_regex"],
+            module_test_file_pattern=test_config["module_source_file_regex"],
         )
 
         project_config = ProjectConfig.get(mongo.project_config(), project_config["project"])

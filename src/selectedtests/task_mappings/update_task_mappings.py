@@ -19,17 +19,18 @@ def update_task_mappings_since_last_commit(evg_api: EvergreenApi, mongo: MongoWr
     :param mongo: An instance of MongoWrapper.
     """
     LOGGER.info("Updating task mappings")
-    project_cursor = mongo.task_mappings_project_config().find({})
+    project_cursor = mongo.project_config().find({})
     for project_config in project_cursor:
         LOGGER.info("Updating task mappings for project", project_config=project_config)
+        task_config = project_config["test_config"]
         mappings, most_recent_version_analyzed = generate_task_mappings(
             evg_api,
             project_config["project"],
-            VersionLimit(stop_at_version_id=project_config["most_recent_version_analyzed"]),
-            project_config["source_file_regex"],
-            module_name=project_config["module"],
-            module_source_file_pattern=project_config["module_source_file_regex"],
-            build_variant_pattern=project_config["build_variant_regex"],
+            VersionLimit(stop_at_version_id=task_config["most_recent_version_analyzed"]),
+            task_config["source_file_regex"],
+            module_name=task_config["module"],
+            module_source_file_pattern=task_config["module_source_file_regex"],
+            build_variant_pattern=task_config["build_variant_regex"],
         )
 
         project_config = ProjectConfig.get(mongo.project_config(), project_config["project"])

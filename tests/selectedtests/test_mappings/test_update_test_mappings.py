@@ -26,16 +26,18 @@ class TestUpdateTestMappingsSinceLastCommit:
         project_config_list = [
             {
                 "project": "project-1",
-                "most_recent_project_commit_analyzed": "project-sha-1",
-                "source_file_regex": "^src",
-                "test_file_regex": "^jstests",
-                "module": "module-1",
-                "most_recent_module_commit_analyzed": "module-sha-2",
-                "module_source_file_regex": "^src",
-                "module_test_file_regex": "^jstests",
+                "test_config": {
+                    "most_recent_project_commit_analyzed": "project-sha-1",
+                    "source_file_regex": "^src",
+                    "test_file_regex": "^jstests",
+                    "module": "module-1",
+                    "most_recent_module_commit_analyzed": "module-sha-2",
+                    "module_source_file_regex": "^src",
+                    "module_test_file_regex": "^jstests",
+                },
             }
         ]
-        mongo_mock.test_mappings_project_config.return_value.find.return_value = project_config_list
+        mongo_mock.project_config.return_value.find.return_value = project_config_list
         generate_test_mappings_mock.return_value = TestMappingsResult(
             test_mappings_list=["mock-mapping"],
             most_recent_project_commit_analyzed="last-project-sha-analyzed",

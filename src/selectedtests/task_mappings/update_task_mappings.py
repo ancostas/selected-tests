@@ -22,7 +22,7 @@ def update_task_mappings_since_last_commit(evg_api: EvergreenApi, mongo: MongoWr
     project_cursor = mongo.project_config().find({})
     for project_config in project_cursor:
         LOGGER.info("Updating task mappings for project", project_config=project_config)
-        task_config = project_config["test_config"]
+        task_config = project_config["task_config"]
         mappings, most_recent_version_analyzed = generate_task_mappings(
             evg_api,
             project_config["project"],
